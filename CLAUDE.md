@@ -135,3 +135,32 @@ The project follows a phased approach with PR reviews after each phase:
 - Animation FPS: 60fps consistent
 - Memory usage: < 100MB
 - APK size: < 15MB
+
+## Critical Project Rules
+
+**IMPORTANT**: Before any development, review:
+1. `PROJECT_INTEGRITY_RULES.md` - Comprehensive rules for maintaining code quality
+2. `PHASE_1_DETAILED_PLAN.md` - Specific implementation details for Phase 1
+3. `DEVELOPMENT_PLAN.md` - Overall project phases and timeline
+
+### Pre-Development Checklist
+- [ ] Verify Android Studio has SDK 35 installed
+- [ ] Confirm JDK 17 is being used
+- [ ] Review package structure requirements
+- [ ] Understand layer dependencies (data → domain ← presentation)
+- [ ] Check that minSdk will be changed to 26 in Phase 1
+
+### Quality Gates
+Each phase must pass these checks:
+1. Run `./check-quality.sh` (create this script in Phase 1)
+2. Detekt analysis shows 0 issues
+3. Unit test coverage meets phase requirements
+4. No memory leaks detected
+5. Runs on both API 26 and API 35 devices
+
+### Common Pitfalls to Avoid
+1. Don't use SDK 34 features without proper API level checks
+2. Don't add dependencies without version catalog entries
+3. Don't skip writing tests for repositories and use cases
+4. Don't commit code with TODO comments
+5. Don't create circular dependencies between layers
