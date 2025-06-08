@@ -2,6 +2,10 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.detekt)
+    jacoco
 }
 
 android {
@@ -10,12 +14,12 @@ android {
 
     defaultConfig {
         applicationId = "com.jomar.boomwisdomdivision"
-        minSdk = 34
+        minSdk = 26
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "com.jomar.boomwisdomdivision.HiltTestRunner"
     }
 
     buildTypes {
@@ -36,11 +40,26 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+    
+    // Test coverage configuration
+    testCoverageEnabled = true
+    
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        animationsDisabled = true
+    }
+    
+    packagingOptions {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
     }
 }
 
 dependencies {
-
+    // Core Android dependencies
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -49,11 +68,97 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    
+    // Networking
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.moshi)
+    implementation(libs.moshi)
+    implementation(libs.okhttp.logging)
+    ksp(libs.moshi.codegen)
+    
+    // Dependency Injection
+    implementation(libs.hilt.android)
+    implementation(libs.hilt.navigation.compose)
+    ksp(libs.hilt.compiler)
+    
+    // Database
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
+    
+    // Architecture Components
+    implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.lifecycle.runtime.compose)
+    
+    // Coroutines
+    implementation(libs.coroutines.android)
+    
+    // Utilities
+    implementation(libs.timber)
+    debugImplementation(libs.leakcanary)
+    
+    // Testing
     testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.coroutines.test)
+    testImplementation(libs.turbine)
+    testImplementation(libs.room.testing)
+    testImplementation(libs.mockwebserver)
+    testImplementation(libs.hilt.testing)
+    testImplementation(libs.truth)
+    testImplementation(libs.androidx.arch.core.testing)
+    
+    // Android Testing
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
+    
+    // Debug
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+}
+
+// Jacoco configuration for test coverage
+jacoco {
+    toolVersion = "0.8.8"
+}
+
+tasks.register<JacocoReport>("jacocoTestReport") {
+    dependsOn("testDebugUnitTest")
+    
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+    
+    val debugTree = fileTree("${buildDir}/tmp/kotlin-classes/debug") {
+        exclude(
+            "**/R.class",
+            "**/R$*.class",
+            "**/BuildConfig.*",
+            "**/Manifest*.*",
+            "**/*Test*.*",
+            "android/**/*.*",
+            "**/BoomWisdomApplication.*", // Exclude Application class from coverage
+            "**/ui/theme/**", // Exclude theme files
+            "**/*\$Companion.*",
+            "**/*\$serializer.*",
+            "**/*_Factory.*",
+            "**/*_Impl.*",
+            "**/*_MembersInjector.*",
+            "**/Dagger*Component*.*",
+            "**/*Module_*Factory.*"
+        )
+    }
+    
+    classDirectories.setFrom(debugTree)
+    sourceDirectories.setFrom("${projectDir}/src/main/java")
+    executionData.setFrom("${buildDir}/jacoco/testDebugUnitTest.exec")
+}
+
+// Task to run tests with coverage
+tasks.register("testDebugUnitTestCoverage") {
+    dependsOn("testDebugUnitTest", "jacocoTestReport")
 }
