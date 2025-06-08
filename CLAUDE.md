@@ -140,8 +140,9 @@ The project follows a phased approach with PR reviews after each phase:
 
 **IMPORTANT**: Before any development, review:
 1. `PROJECT_INTEGRITY_RULES.md` - Comprehensive rules for maintaining code quality
-2. `PHASE_1_DETAILED_PLAN.md` - Specific implementation details for Phase 1
+2. `CURRENT_PHASE_PLAN.md` - Specific implementation details for the active phase
 3. `DEVELOPMENT_PLAN.md` - Overall project phases and timeline
+4. `PHASE_ROTATION_PROTOCOL.md` - Process for transitioning between phases
 
 ### Pre-Development Checklist
 - [ ] Verify Android Studio has SDK 35 installed
@@ -164,3 +165,19 @@ Each phase must pass these checks:
 3. Don't skip writing tests for repositories and use cases
 4. Don't commit code with TODO comments
 5. Don't create circular dependencies between layers
+
+## Phase Management
+
+### Current Phase Tracking
+- Active phase plan is always in `CURRENT_PHASE_PLAN.md`
+- Completed phases are archived in `archive/phase-X-completed/`
+- Use `./phase-rotate.sh <current> <next>` to transition phases
+
+### Phase Rotation Process
+1. Complete all tasks in current phase
+2. Create PR and get it merged
+3. Run phase rotation script
+4. Fill in completion summary
+5. Begin next phase with fresh plan
+
+This ensures focus on current work while preserving project history.
