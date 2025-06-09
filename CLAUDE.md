@@ -34,16 +34,15 @@ BoomWisdomDivision is an Android app that presents motivational quotes through a
 
 ## Architecture and Structure
 
-### Technology Stack
+### Technology Stack (Simplified Approach)
 - **UI Framework**: Jetpack Compose with Material3
 - **Language**: Kotlin
 - **Build System**: Gradle with Kotlin DSL and Version Catalog
-- **Min SDK**: 34 (Android 14) - Should be lowered to 26 for broader device support
+- **Min SDK**: 26 (Android 8.0) - For broader device support
 - **Target SDK**: 35 (Android 15)
-- **Architecture**: MVVM with Repository Pattern
-- **DI Framework**: Hilt
-- **Networking**: Retrofit with Moshi
-- **Database**: Room
+- **Architecture**: Simple MVVM pattern (no complex DI)
+- **Networking**: Basic OkHttp + Moshi (no Retrofit initially)
+- **Local Storage**: SharedPreferences for favorites
 - **Quote API**: Quotable API (free, no auth required)
 
 ### Key Implementation Requirements
@@ -53,14 +52,14 @@ BoomWisdomDivision is an Android app that presents motivational quotes through a
    - Monospace font (Courier New or IBM Plex Mono)
    - Golden glow effects on the monitor base
 
-2. **API Integration Required**
-   - Recommended APIs: Quotable, ZenQuotes, or Quotes.rest
-   - Must handle quote text and author attribution
-   - Implement offline fallback for saved quotes
+2. **API Integration (Phase 3)**
+   - Start with hardcoded quotes, then add Quotable API
+   - Simple HTTP calls with basic error handling
+   - Offline fallback using cached quotes
 
-3. **Local Storage**
-   - Implement favorites system using SharedPreferences or Room
-   - Store: quote text, author, save date, last viewed quote
+3. **Local Storage (Phase 4)**
+   - SharedPreferences for favorites and settings
+   - Store: favorite quotes, last viewed quote, user preferences
 
 4. **UI Components Needed**
    - Custom CRT monitor composable with perspective tilt
