@@ -32,16 +32,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jomar.boomwisdomdivision.R
 import com.jomar.boomwisdomdivision.model.Quote
+import com.jomar.boomwisdomdivision.model.AppState
 import com.jomar.boomwisdomdivision.ui.theme.*
 
 @Composable
 fun CRTMonitor(
     quote: Quote,
+    currentAppState: AppState = AppState.MOTIVATION,
     isFavorite: Boolean = false,
     isTransitioning: Boolean = false,
     onFavoriteClick: () -> Unit = {},
     onNextQuote: () -> Unit = {},
     onPreviousQuote: () -> Unit = {},
+    onAppStateChange: (AppState) -> Unit = {},
     onViewFavorites: () -> Unit = {},
     isLoading: Boolean = false,
     error: String? = null,
@@ -276,6 +279,70 @@ fun CRTMonitor(
                 modifier = Modifier.size(30.dp)
             )
         }
+        
+        // Interactive text buttons positioned over background image text
+        // MOTIVATION button - positioned over background text
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .offset(x = 45.dp, y = 75.dp)
+                .clickable { onAppStateChange(AppState.MOTIVATION) }
+                .padding(8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "MOTIVATION",
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontFamily = FontFamily.SansSerif,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (currentAppState == AppState.MOTIVATION) CRTGoldenGlow else Color(0xFF8B4513),
+                    letterSpacing = 1.sp
+                )
+            )
+        }
+        
+        // MINDFULNESS button - positioned over background text  
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .offset(x = 0.dp, y = 75.dp)
+                .clickable { onAppStateChange(AppState.MINDFULNESS) }
+                .padding(8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "MINDFULNESS",
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontFamily = FontFamily.SansSerif,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (currentAppState == AppState.MINDFULNESS) CRTGoldenGlow else Color(0xFF8B4513),
+                    letterSpacing = 1.sp
+                )
+            )
+        }
+        
+        // CREATIVITY button - positioned over background text
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .offset(x = (-45).dp, y = 75.dp)
+                .clickable { onAppStateChange(AppState.CREATIVITY) }
+                .padding(8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "CREATIVITY",
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontFamily = FontFamily.SansSerif,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (currentAppState == AppState.CREATIVITY) CRTGoldenGlow else Color(0xFF8B4513),
+                    letterSpacing = 1.sp
+                )
+            )
+        }
     }
 }
 
@@ -288,8 +355,10 @@ fun CRTMonitorPreview() {
                 text = "The future belongs to those who believe in the beauty of their dreams",
                 author = "Eleanor Roosevelt"
             ),
+            currentAppState = AppState.MOTIVATION,
             isFavorite = false,
             isTransitioning = false,
+            onAppStateChange = {},
             onViewFavorites = {},
             isLoading = false,
             error = null

@@ -3,6 +3,7 @@ package com.jomar.boomwisdomdivision.data.preferences
 import android.content.Context
 import android.content.SharedPreferences
 import com.jomar.boomwisdomdivision.model.Quote
+import com.jomar.boomwisdomdivision.model.AppState
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -36,6 +37,7 @@ class PreferencesManager private constructor(context: Context) {
         private const val KEY_LAST_VIEWED_QUOTE = "last_viewed_quote"
         private const val KEY_FIRST_LAUNCH = "is_first_launch"
         private const val KEY_THEME_MODE = "theme_mode"
+        private const val KEY_APP_STATE = "app_state"
         
         @Volatile
         private var INSTANCE: PreferencesManager? = null
@@ -142,6 +144,25 @@ class PreferencesManager private constructor(context: Context) {
      */
     fun setThemeMode(mode: String) {
         prefs.edit().putString(KEY_THEME_MODE, mode).apply()
+    }
+    
+    /**
+     * Get current app state
+     */
+    fun getAppState(): AppState {
+        val stateName = prefs.getString(KEY_APP_STATE, AppState.MOTIVATION.name) ?: AppState.MOTIVATION.name
+        return try {
+            AppState.valueOf(stateName)
+        } catch (e: IllegalArgumentException) {
+            AppState.MOTIVATION // Default fallback
+        }
+    }
+    
+    /**
+     * Set current app state
+     */
+    fun setAppState(appState: AppState) {
+        prefs.edit().putString(KEY_APP_STATE, appState.name).apply()
     }
     
     /**

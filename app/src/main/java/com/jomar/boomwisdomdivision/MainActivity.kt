@@ -19,6 +19,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.jomar.boomwisdomdivision.model.Quote
+import com.jomar.boomwisdomdivision.model.AppState
 import com.jomar.boomwisdomdivision.data.repository.QuoteRepositoryImpl
 import com.jomar.boomwisdomdivision.data.preferences.PreferencesManager
 import com.jomar.boomwisdomdivision.ui.components.CRTMonitor
@@ -46,6 +47,7 @@ fun BoomWisdomApp() {
     val quoteRepository = remember { QuoteRepositoryImpl.getInstance() }
     val preferencesManager = remember { PreferencesManager.getInstance(context) }
     var currentQuote by remember { mutableStateOf<Quote?>(null) }
+    var currentAppState by remember { mutableStateOf(preferencesManager.getAppState()) }
     val scope = rememberCoroutineScope()
     
     // Observe favorites from preferences
@@ -122,10 +124,19 @@ fun BoomWisdomApp() {
                     ) { animatedQuote ->
                         CRTMonitor(
                             quote = animatedQuote,
+                            currentAppState = currentAppState,
                             isFavorite = favoriteIds.contains(animatedQuote.id),
                             isTransitioning = isTransitioning,
                             onFavoriteClick = {
                                 preferencesManager.toggleFavorite(animatedQuote.id)
+                            },
+                            onAppStateChange = { newState ->
+                                currentAppState = newState
+                                preferencesManager.setAppState(newState)
+                                // TODO: Implement filtering logic based on app state
+                                scope.launch {
+                                    currentQuote = quoteRepository.getRandomQuote()
+                                }
                             },
                             onNextQuote = {
                                 scope.launch {
