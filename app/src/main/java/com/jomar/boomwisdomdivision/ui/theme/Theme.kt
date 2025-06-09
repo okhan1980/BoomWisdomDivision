@@ -11,6 +11,22 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
+private val CRTColorScheme = darkColorScheme(
+    primary = CRTGlow,
+    secondary = CRTGlowDim,
+    tertiary = CRTText,
+    background = CRTBackground,
+    surface = CRTScreen,
+    onPrimary = CRTBackground,
+    onSecondary = CRTBackground,
+    onTertiary = CRTBackground,
+    onBackground = CRTText,
+    onSurface = CRTText,
+    outline = CRTFrame,
+    surfaceVariant = CRTFrame
+)
+
+// Legacy color schemes (kept for compatibility)
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
     secondary = PurpleGrey80,
@@ -21,34 +37,17 @@ private val LightColorScheme = lightColorScheme(
     primary = Purple40,
     secondary = PurpleGrey40,
     tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
 )
 
 @Composable
 fun BoomWisdomDivisionTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    darkTheme: Boolean = true, // Always use dark theme for CRT aesthetic
+    // Dynamic color disabled for consistent CRT look
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
+    // Always use CRT color scheme for consistent retro aesthetic
+    val colorScheme = CRTColorScheme
 
     MaterialTheme(
         colorScheme = colorScheme,
