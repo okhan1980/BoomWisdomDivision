@@ -3,20 +3,17 @@ package com.jomar.boomwisdomdivision.data.model
 import com.squareup.moshi.Json
 
 /**
- * Data model for ZenQuotes API response
- * Matches the JSON structure from https://zenquotes.io/api/random
- * Returns array with single quote object: [{"q": "quote", "a": "author", "h": "html"}]
+ * Data model for DummyJSON Quotes API response
+ * Matches the JSON structure from https://dummyjson.com/quotes/random
+ * Returns direct quote object: {"id": 1, "quote": "...", "author": "..."}
  */
 data class QuoteResponse(
-    @Json(name = "q")
+    @Json(name = "id")
+    val id: Int,
+    
+    @Json(name = "quote")
     val content: String,
     
-    @Json(name = "a")
-    val author: String,
-    
-    @Json(name = "h")
-    val html: String = "",
-    
-    // Generate a simple ID for compatibility
-    val id: String = java.util.UUID.randomUUID().toString()
+    @Json(name = "author")
+    val author: String
 )
