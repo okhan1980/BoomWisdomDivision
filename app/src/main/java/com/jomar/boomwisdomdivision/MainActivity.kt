@@ -48,9 +48,16 @@ fun BoomWisdomApp() {
     
     // Load initial quote
     LaunchedEffect(Unit) {
+        // Always start with a cached/fallback quote for immediate display
         currentQuote = quoteRepository.getRandomQuote()
-        // Trigger initial cache refresh
-        quoteRepository.refreshQuotes()
+        // Trigger initial cache refresh in background
+        // Don't block the UI for this
+        try {
+            quoteRepository.refreshQuotes()
+        } catch (e: Exception) {
+            println("Background refresh failed: ${e.message}")
+            // Don't show error immediately - user has quotes to see
+        }
     }
     
     Surface(
@@ -80,11 +87,13 @@ fun BoomWisdomApp() {
                     },
                     onNextQuote = {
                         scope.launch {
+                            println("User requested next quote") // Debug
                             currentQuote = quoteRepository.getRandomQuote()
                         }
                     },
                     onPreviousQuote = {
                         scope.launch {
+                            println("User requested previous quote") // Debug  
                             currentQuote = quoteRepository.getRandomQuote()
                         }
                     },

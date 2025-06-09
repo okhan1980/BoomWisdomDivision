@@ -1,358 +1,238 @@
 # Project Integrity Rules & Development Guidelines
 
-## Critical Analysis & Improvements
+## Project Overview
+BoomWisdomDivision follows a **simplified development approach** prioritizing working functionality over complex architecture patterns.
 
-### 1. Build Configuration Integrity
+## Core Principles
+1. **Working first, perfect later**: Get functionality running quickly
+2. **Simple is better**: Avoid over-engineering 
+3. **Incremental complexity**: Add features one at a time
+4. **Focus on UX**: The CRT interface is the main attraction
 
-#### Rules for Maintaining Latest Android Support:
-1. **Gradle & AGP Version Management**
-   - Check for AGP updates weekly during development
-   - Never downgrade AGP or Gradle versions
-   - Use `./gradlew wrapper --gradle-version=latest` to update
-   - Current: AGP 8.10.1, Gradle wrapper should match
+---
 
-2. **SDK Version Policy**
-   - **compileSdk**: Always use latest stable (currently 35)
-   - **targetSdk**: Match compileSdk for new features
-   - **minSdk**: MUST change from 34 to 26 in Phase 1
-     - Current minSdk 34 limits to ~5% of devices
-     - minSdk 26 covers ~98% of active devices
+## 1. Build Configuration Integrity
 
-3. **Dependency Updates**
-   ```gradle
-   // Add to app/build.gradle.kts
-   tasks.register("checkDependencyUpdates") {
-       dependsOn("dependencyUpdates")
-       doLast {
-           println("Check build/dependencyUpdates/report.txt for outdated dependencies")
-       }
-   }
-   ```
+### SDK Version Policy
+- **compileSdk**: 35 (latest stable)
+- **targetSdk**: 35 (match compileSdk)
+- **minSdk**: 26 (covers ~98% of devices, already set)
 
-### 2. Architecture Integrity Rules
+### Gradle & AGP Management
+- Current: AGP 8.10.1 with Gradle 8.10.2
+- Check for updates periodically but don't chase bleeding edge
+- Use version catalog for all dependencies
 
-#### Package Structure Enforcement:
-```
-com.jomar.boomwisdomdivision/
-├── data/
-│   ├── api/          # Retrofit interfaces, DTOs
-│   ├── db/           # Room entities, DAOs
-│   ├── repository/   # Repository implementations
-│   └── di/           # Data layer DI modules
-├── domain/
-│   ├── model/        # Domain models
-│   ├── usecase/      # Business logic
-│   └── repository/   # Repository interfaces
-├── presentation/
-│   ├── ui/
-│   │   ├── screen/   # Screen composables
-│   │   ├── component/# Reusable components
-│   │   └── theme/    # Theme, colors, typography
-│   ├── viewmodel/    # ViewModels
-│   └── di/           # Presentation DI modules
-└── core/
-    ├── util/         # Extensions, helpers
-    └── constant/     # App constants
-```
-
-#### Dependency Rules:
-- **data** layer depends on **domain** only
-- **presentation** depends on **domain** only
-- **domain** has NO dependencies on other layers
-- Use interfaces in **domain** for dependency inversion
-
-### 3. Code Quality Enforcement
-
-#### Mandatory Checks Before Each Phase PR:
+### Quality Check Script
 ```bash
-# Add to project root as check-quality.sh
 #!/bin/bash
+# check-quality.sh
 echo "Running quality checks..."
 
-# 1. Build check
 ./gradlew clean build || exit 1
-
-# 2. Lint check
 ./gradlew lint || exit 1
-
-# 3. Unit tests
 ./gradlew test || exit 1
-
-# 4. Detekt (static analysis)
 ./gradlew detekt || exit 1
-
-# 5. Dependency updates
-./gradlew dependencyUpdates
 
 echo "All checks passed!"
 ```
 
-#### Lint Configuration:
+---
+
+## 2. Simplified Architecture Rules
+
+### Package Structure (Simplified)
+```
+com.jomar.boomwisdomdivision/
+├── data/
+│   ├── api/          # API interfaces, response models
+│   ├── model/        # Data models  
+│   └── repository/   # Repository implementations
+├── ui/
+│   ├── components/   # Reusable UI components
+│   ├── theme/        # Colors, typography, theme
+│   └── screen/       # Screen composables (if multiple)
+└── MainActivity.kt   # Main entry point
+```
+
+### Dependency Rules (Simplified)
+- **No Hilt/Dagger**: Use simple singletons and manual DI
+- **No Room Database**: SharedPreferences for simple storage
+- **No Retrofit**: Basic OkHttp + Moshi for networking
+- **Simple MVVM**: ViewModels + Composables, minimal abstraction
+
+### Dependencies by Phase
+```kotlin
+// Phase 2: Just Compose (already have)
+// Phase 3: Add networking (already added)
+implementation("com.squareup.okhttp3:okhttp:4.12.0")
+implementation("com.squareup.moshi:moshi-kotlin:1.15.1")
+
+// Phase 4: Add if needed
+implementation("androidx.datastore:datastore-preferences:1.0.0")
+```
+
+---
+
+## 3. Code Quality Rules
+
+### Mandatory Checks Before Each Phase
+1. Run `./check-quality.sh`
+2. App builds and runs successfully
+3. Manual testing on target devices
+4. Core functionality works as expected
+5. No TODO comments in committed code
+
+### Lint Configuration (Minimal)
 ```xml
 <!-- app/lint.xml -->
 <lint>
     <issue id="NewApi" severity="error" />
-    <issue id="ObsoleteSdkInt" severity="warning" />
     <issue id="UnusedResources" severity="warning" />
-    <issue id="IconDensities" severity="ignore" />
     <issue id="ComposePreviewPublic" severity="error" />
-    <issue id="ComposeMutableParameters" severity="error" />
 </lint>
 ```
 
-### 4. Performance & Memory Rules
+---
 
-#### Baseline Profiles:
-```kotlin
-// Add in Phase 3
-android {
-    buildTypes {
-        release {
-            baselineProfile.automaticGenerationDuringBuild = true
-        }
-    }
-}
-```
+## 4. Performance Guidelines
 
-#### Memory Leak Detection:
+### Memory Management
+- Monitor memory usage (target: <100MB)
+- Add LeakCanary for debug builds only:
 ```kotlin
-// Add LeakCanary for debug builds only
 dependencies {
     debugImplementation("com.squareup.leakcanary:leakcanary-android:2.14")
 }
 ```
 
-#### Strict Mode (Debug Only):
-```kotlin
-// In Application class
-if (BuildConfig.DEBUG) {
-    StrictMode.setThreadPolicy(
-        StrictMode.ThreadPolicy.Builder()
-            .detectAll()
-            .penaltyLog()
-            .build()
-    )
-}
-```
+### Compose Performance
+- Use `remember` appropriately to avoid recomposition
+- Implement smooth 60fps animations for quote transitions
+- Optimize golden glow effects for performance
 
-### 5. Compose-Specific Rules
+---
 
-#### State Management:
-1. Use `rememberSaveable` for configuration changes
-2. Hoist state to appropriate level
-3. Use `derivedStateOf` for computed values
-4. Avoid recomposition with `remember { mutableStateOf() }`
+## 5. Testing Requirements (Simplified)
 
-#### Animation Performance:
-```kotlin
-// Use infinite transition for continuous animations
-val infiniteTransition = rememberInfiniteTransition()
-val glowAlpha by infiniteTransition.animateFloat(
-    initialValue = 0.3f,
-    targetValue = 0.7f,
-    animationSpec = infiniteRepeatable(
-        animation = tween(1000),
-        repeatMode = RepeatMode.Reverse
-    )
-)
-```
+### Per-Phase Testing Minimums
+- **Phase 2**: Manual testing of UI components
+- **Phase 3**: Unit tests for quote repository logic
+- **Phase 4**: Basic UI tests for critical flows
+- **Phase 5**: End-to-end testing and release prep
 
-### 6. Security & Privacy Rules
-
-#### API Key Management:
-```gradle
-// In local.properties (never commit)
-QUOTABLE_BASE_URL=https://api.quotable.io
-
-// In build.gradle.kts
-android {
-    buildTypes {
-        getByName("debug") {
-            buildConfigField("String", "API_BASE_URL", "\"${properties["QUOTABLE_BASE_URL"]}\"")
-        }
-    }
-}
-```
-
-#### Network Security:
-```xml
-<!-- res/xml/network_security_config.xml -->
-<network-security-config>
-    <domain-config cleartextTrafficPermitted="false">
-        <domain includeSubdomains="true">api.quotable.io</domain>
-    </domain-config>
-</network-security-config>
-```
-
-### 7. Testing Requirements
-
-#### Per-Phase Testing Minimums:
-- **Phase 1**: 80% coverage for repositories
-- **Phase 2**: UI screenshot tests for main screen
-- **Phase 3**: Animation performance tests
-- **Phase 4**: Full E2E user flow tests
-- **Phase 5**: Monkey testing, memory profiling
-
-#### Test Configuration:
+### Test Configuration
 ```kotlin
 android {
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
-            isReturnDefaultValues = true
         }
-        animationsDisabled = true
     }
 }
 ```
 
-### 8. Build Optimization
+---
 
-#### R8/ProGuard Rules:
-```pro
-# Quotable API models
--keep class com.jomar.boomwisdomdivision.data.api.model.** { *; }
+## 6. Security & API Management
 
-# Retrofit
--keepattributes Signature
--keepattributes Exceptions
-
-# Room
--keep class * extends androidx.room.RoomDatabase
-```
-
-#### Build Performance:
-```gradle
-// gradle.properties additions
-org.gradle.parallel=true
-org.gradle.caching=true
-org.gradle.configuration-cache=true
-kotlin.incremental.useClasspathSnapshot=true
-```
-
-### 9. Accessibility Requirements
-
-1. All interactive elements must have content descriptions
-2. Minimum touch target: 48dp x 48dp
-3. Contrast ratio: 4.5:1 for normal text
-4. Test with TalkBack enabled
-
-### 10. Phase Checkpoint Rules
-
-Before completing each phase:
-1. Run `./check-quality.sh`
-2. Update `PROGRESS.md` with detailed notes
-3. Ensure no TODOs in committed code
-4. Verify app runs on oldest (API 26) and newest (API 35) devices
-5. Profile memory usage and fix leaks
-6. Update documentation if APIs changed
-
-### 11. Continuous Monitoring
-
-#### GitHub Actions Workflow:
-```yaml
-name: Android CI
-on:
-  push:
-    branches: [ main, feature/* ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-    
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-    
-    - name: Build with Gradle
-      run: ./gradlew build
-    
-    - name: Run tests
-      run: ./gradlew test
-    
-    - name: Run lint
-      run: ./gradlew lint
-    
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-debug
-        path: app/build/outputs/apk/debug/app-debug.apk
-```
-
-### 12. Version Control Rules
-
-1. **Commit Messages**: Follow conventional commits
-   - `feat:` new feature
-   - `fix:` bug fix
-   - `docs:` documentation
-   - `style:` formatting
-   - `refactor:` code restructuring
-   - `test:` test additions
-   - `chore:` maintenance
-
-2. **Branch Protection**:
-   - Require PR reviews
-   - Require status checks to pass
-   - Dismiss stale reviews
-   - Include administrators
-
-### 13. Critical Path Items
-
-**Must Complete in Phase 1:**
-1. Change minSdk to 26
-2. Set up Detekt for code analysis
-3. Configure R8 optimization
-4. Add version catalogs for all dependencies
-
-**Blockers to Address:**
-1. Quotable API's 125-char limit may be too short
-2. CRT perspective effect complexity
-3. Golden glow performance on low-end devices
-
-### 14. Rollback Strategy
-
-If issues arise:
-1. Each phase in separate branch
-2. Tag each phase completion
-3. Maintain compatibility between phases
-4. Document breaking changes
-
-### 15. Success Metrics Tracking
-
-Track from Phase 1:
+### API Configuration
 ```kotlin
-// Analytics events to implement
-sealed class AnalyticsEvent {
-    object AppLaunched : AnalyticsEvent()
-    object QuoteGenerated : AnalyticsEvent()
-    object QuoteBookmarked : AnalyticsEvent()
-    data class ErrorOccurred(val error: String) : AnalyticsEvent()
+// Simple configuration approach
+object ApiConfig {
+    const val BASE_URL = "https://api.quotable.io"
+    const val TIMEOUT_SECONDS = 30L
 }
 ```
 
-## Red Flags to Watch
+### Network Security
+- Enforce HTTPS only
+- Basic error handling and retry logic
+- Simple exponential backoff for failures
 
-1. **Performance**: Quote transition drops below 60fps
-2. **Memory**: App uses >100MB for basic operation  
-3. **Network**: API calls take >2 seconds
-4. **Crashes**: Any crash in core flow
-5. **Architecture**: Layers start depending incorrectly
+---
 
-## Phase Gate Criteria
+## 7. Common Pitfalls to Avoid
 
-No phase proceeds without:
-- [ ] All tests passing
-- [ ] No critical lint errors
-- [ ] Memory profiling shows no leaks
-- [ ] Runs on API 26 and API 35
-- [ ] PR approved with no unresolved comments
-- [ ] PROGRESS.md updated completely
+1. **Don't over-engineer**: Keep architecture simple
+2. **Don't add dependencies** without version catalog entries
+3. **Don't skip basic testing** for core functionality
+4. **Don't commit code** with TODO comments
+5. **Don't add complex patterns** when simple ones work
+6. **Don't use advanced SDK features** without API level checks
+
+---
+
+## 8. Version Control Rules
+
+### Commit Messages (Simplified)
+- `feat:` new feature
+- `fix:` bug fix
+- `docs:` documentation updates
+- `style:` formatting/UI changes
+- `refactor:` code restructuring
+
+### Branch Strategy
+- Feature branches: `feature/phase-X-description`
+- PR after each phase with summary
+- Main branch contains only stable, reviewed code
+
+---
+
+## 9. Phase Checkpoint Rules
+
+Before completing each phase:
+1. ✅ Run `./check-quality.sh`
+2. ✅ Update `PROGRESS.md` with achievements
+3. ✅ Ensure no TODOs in committed code
+4. ✅ Verify app runs on API 26 and API 35 devices
+5. ✅ Test core functionality manually
+6. ✅ Create PR with comprehensive summary
+
+---
+
+## 10. Development Focus Areas
+
+### Phase 2 Priorities (Current)
+- CRT monitor visual styling with perspective
+- Monospace font implementation
+- Golden glow effects
+- Smooth quote transitions
+- Portrait orientation lock
+
+### Performance Targets
+- App launch: < 2 seconds
+- Quote transitions: 60fps smooth
+- Memory usage: < 100MB
+- API response: < 500ms (from cache)
+
+---
+
+## Success Criteria
+
+### Each Phase Must Achieve:
+- ✅ Functional feature implementation
+- ✅ No critical bugs or crashes
+- ✅ Smooth user experience
+- ✅ Clean, readable code
+- ✅ Updated documentation
+
+### Red Flags to Address Immediately:
+- App crashes during normal use
+- Animation performance below 30fps
+- Memory leaks detected
+- API calls failing consistently
+- Build failures or lint errors
+
+---
+
+## Quality Gates
+
+**No phase proceeds without:**
+- [ ] All builds passing
+- [ ] Core functionality working
+- [ ] No critical issues
+- [ ] PROGRESS.md updated
+- [ ] PR approved and merged
+
+**Remember**: Focus on delivering working features over perfect architecture. Complexity can be added incrementally as needed.

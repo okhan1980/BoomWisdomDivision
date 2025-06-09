@@ -103,40 +103,6 @@ fun CRTMonitor(
                                 .padding(horizontal = 20.dp)
                         )
                     }
-                    error != null -> {
-                        // Error message with retry option
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp)
-                        ) {
-                            Text(
-                                text = "WISDOM OFFLINE",
-                                style = MaterialTheme.typography.bodyLarge.copy(
-                                    fontFamily = FontFamily.Monospace,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF8B0000),
-                                    letterSpacing = 1.sp
-                                ),
-                                textAlign = TextAlign.Center
-                            )
-                            Text(
-                                text = "TAP TO RETRY",
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontFamily = FontFamily.Monospace,
-                                    fontSize = 12.sp,
-                                    color = Color(0xFF555555),
-                                    letterSpacing = 1.sp
-                                ),
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier
-                                    .padding(top = 8.dp)
-                                    .clickable { onRetry() }
-                            )
-                        }
-                    }
                     else -> {
                         // Quote text with perspective transformation to simulate angled CRT screen
                         Text(

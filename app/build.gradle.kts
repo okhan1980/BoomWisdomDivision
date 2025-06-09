@@ -79,6 +79,7 @@ dependencies {
     implementation(libs.androidx.material3)
     
     // Networking for Phase 3
+    implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
     implementation(libs.moshi)
     

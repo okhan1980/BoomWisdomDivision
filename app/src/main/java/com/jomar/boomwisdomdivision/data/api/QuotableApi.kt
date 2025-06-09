@@ -5,6 +5,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import com.squareup.moshi.Types
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import java.io.IOException
@@ -13,22 +14,25 @@ import kotlinx.coroutines.withContext
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * Simple HTTP client for Quotable API without Retrofit
+ * Simple HTTP client for ZenQuotes API without Retrofit
  * Following Phase 3 requirement for basic OkHttp implementation
  */
 class QuotableApi {
     
     companion object {
-        private const val BASE_URL = "https://api.quotable.io"
-        private const val RANDOM_QUOTE_ENDPOINT = "/quotes/random"
-        private const val MOTIVATIONAL_TAGS = "?tags=motivational|inspirational|wisdom"
+        private const val BASE_URL = "https://zenquotes.io"
+        private const val RANDOM_QUOTE_ENDPOINT = "/api/random"
+        private const val TODAY_QUOTE_ENDPOINT = "/api/today"
     }
     
     private val moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
         .build()
     
-    private val quoteResponseAdapter = moshi.adapter(QuoteResponse::class.java)
+    // ZenQuotes returns an array, so we need to parse it as a list
+    private val quoteListAdapter = moshi.adapter<List<QuoteResponse>>(
+        Types.newParameterizedType(List::class.java, QuoteResponse::class.java)
+    )
     
     private val httpClient = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply {
@@ -39,13 +43,16 @@ class QuotableApi {
         .build()
     
     /**
-     * Fetch a random motivational quote from Quotable API
+     * Fetch a random motivational quote from ZenQuotes API
      * @return QuoteResponse on success, null on failure
      */
     suspend fun getRandomQuote(): Result<QuoteResponse> = withContext(Dispatchers.IO) {
         try {
+            val url = "$BASE_URL$RANDOM_QUOTE_ENDPOINT"
+            println("API Request: $url") // Debug logging
+            
             val request = Request.Builder()
-                .url("$BASE_URL$RANDOM_QUOTE_ENDPOINT$MOTIVATIONAL_TAGS")
+                .url(url)
                 .get()
                 .build()
             
@@ -54,21 +61,31 @@ class QuotableApi {
             if (response.isSuccessful) {
                 val responseBody = response.body?.string()
                 if (responseBody != null) {
-                    val quoteResponse = quoteResponseAdapter.fromJson(responseBody)
-                    if (quoteResponse != null) {
-                        Result.success(quoteResponse)
+                    println("API Response: $responseBody") // Debug logging
+                    
+                    // ZenQuotes returns an array, so parse as list and take first item
+                    val quoteList = quoteListAdapter.fromJson(responseBody)
+                    if (quoteList != null && quoteList.isNotEmpty()) {
+                        val quote = quoteList.first()
+                        Result.success(quote.copy(id = java.util.UUID.randomUUID().toString()))
                     } else {
-                        Result.failure(Exception("Failed to parse quote response"))
+                        val error = "Failed to parse quote response. Raw response: $responseBody"
+                        println("Parse Error: $error")
+                        Result.failure(Exception(error))
                     }
                 } else {
                     Result.failure(Exception("Empty response body"))
                 }
             } else {
-                Result.failure(Exception("HTTP ${response.code}: ${response.message}"))
+                val error = "HTTP ${response.code}: ${response.message}"
+                println("HTTP Error: $error")
+                Result.failure(Exception(error))
             }
         } catch (e: IOException) {
+            println("Network Error: ${e.message}")
             Result.failure(e)
         } catch (e: Exception) {
+            println("Unexpected Error: ${e.message}")
             Result.failure(e)
         }
     }
@@ -82,21 +99,60 @@ class QuotableApi {
         try {
             val quotes = mutableListOf<QuoteResponse>()
             
-            // Fetch quotes one by one to ensure variety
+            // Fetch quotes one by one to ensure variety (ZenQuotes doesn't support batch)
             repeat(count) {
                 val result = getRandomQuote()
                 if (result.isSuccess) {
                     result.getOrNull()?.let { quotes.add(it) }
                 }
                 
-                // Small delay to avoid hitting rate limits
-                kotlinx.coroutines.delay(100)
+                // Small delay to avoid hitting rate limits (100 requests/day limit)
+                kotlinx.coroutines.delay(200)
             }
             
             if (quotes.isNotEmpty()) {
                 Result.success(quotes)
             } else {
                 Result.failure(Exception("Failed to fetch any quotes"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Get today's featured quote
+     * @return QuoteResponse for today's quote
+     */
+    suspend fun getTodaysQuote(): Result<QuoteResponse> = withContext(Dispatchers.IO) {
+        try {
+            val url = "$BASE_URL$TODAY_QUOTE_ENDPOINT"
+            println("API Request (Today): $url") // Debug logging
+            
+            val request = Request.Builder()
+                .url(url)
+                .get()
+                .build()
+            
+            val response = httpClient.newCall(request).execute()
+            
+            if (response.isSuccessful) {
+                val responseBody = response.body?.string()
+                if (responseBody != null) {
+                    println("API Response (Today): $responseBody") // Debug logging
+                    
+                    val quoteList = quoteListAdapter.fromJson(responseBody)
+                    if (quoteList != null && quoteList.isNotEmpty()) {
+                        val quote = quoteList.first()
+                        Result.success(quote.copy(id = "today-${java.time.LocalDate.now()}"))
+                    } else {
+                        Result.failure(Exception("Failed to parse today's quote"))
+                    }
+                } else {
+                    Result.failure(Exception("Empty response body"))
+                }
+            } else {
+                Result.failure(Exception("HTTP ${response.code}: ${response.message}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

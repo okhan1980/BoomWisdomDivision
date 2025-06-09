@@ -81,8 +81,8 @@ class QuoteRepositoryImpl {
     )
     
     companion object {
-        private const val CACHE_TARGET_SIZE = 15
-        private const val REFILL_THRESHOLD = 5
+        private const val CACHE_TARGET_SIZE = 20  // Increased cache size
+        private const val REFILL_THRESHOLD = 10   // Higher threshold for refill
         
         // Singleton instance for simplified architecture
         @Volatile
@@ -101,22 +101,58 @@ class QuoteRepositoryImpl {
     }
     
     /**
-     * Get a random quote from cache, falling back to API if needed
+     * Get a random quote - tries API first, then falls back to cache
      */
     suspend fun getRandomQuote(): Quote {
-        val currentCache = _cachedQuotes.value
-        
-        // If cache is low, try to refill in background
-        if (currentCache.size < REFILL_THRESHOLD) {
-            refillCache()
-        }
-        
-        // Return random quote from current cache
-        return if (currentCache.isNotEmpty()) {
-            currentCache.random()
-        } else {
-            // Fallback to hardcoded quotes if everything fails
-            fallbackQuotes.random()
+        // Try to get a fresh quote from API first (with some probability)
+        return try {
+            val shouldFetchFresh = kotlin.random.Random.nextDouble() < 0.7 // 70% chance to fetch fresh
+            
+            if (shouldFetchFresh) {
+                println("Attempting to fetch fresh quote from API...") // Debug
+                val result = quotableApi.getRandomQuote()
+                if (result.isSuccess) {
+                    val apiQuote = result.getOrNull()?.toQuote()
+                    if (apiQuote != null) {
+                        println("Successfully got fresh quote: ${apiQuote.text.take(50)}...") // Debug
+                        // Add to cache for future use
+                        cacheMutex.withLock {
+                            val currentQuotes = _cachedQuotes.value.toMutableList()
+                            currentQuotes.add(apiQuote)
+                            _cachedQuotes.value = currentQuotes.distinctBy { it.text }
+                        }
+                        return apiQuote
+                    }
+                }
+            }
+            
+            // Fallback to cached quotes
+            val currentCache = _cachedQuotes.value
+            println("Using cached quote (cache size: ${currentCache.size})") // Debug
+            
+            // If cache is low, try to refill in background (note: simplified for now)
+            if (currentCache.size < REFILL_THRESHOLD) {
+                // Note: Background refill will happen on next refresh call
+                println("Cache is low (${currentCache.size} quotes), will refill on next refresh")
+            }
+            
+            // Return random quote from current cache
+            if (currentCache.isNotEmpty()) {
+                currentCache.random()
+            } else {
+                // Ultimate fallback to hardcoded quotes
+                println("Using fallback hardcoded quote") // Debug
+                fallbackQuotes.random()
+            }
+        } catch (e: Exception) {
+            println("Error in getRandomQuote: ${e.message}") // Debug
+            // Fallback to cached or hardcoded quotes
+            val currentCache = _cachedQuotes.value
+            if (currentCache.isNotEmpty()) {
+                currentCache.random()
+            } else {
+                fallbackQuotes.random()
+            }
         }
     }
     
@@ -135,19 +171,30 @@ class QuoteRepositoryImpl {
         _error.value = null
         
         try {
-            val result = quotableApi.getMultipleRandomQuotes(CACHE_TARGET_SIZE)
+            println("Starting quote refresh...") // Debug logging
+            // Start with smaller batch to respect rate limits, then gradually increase cache
+            val result = quotableApi.getMultipleRandomQuotes(10) // Reduced initial batch
             if (result.isSuccess) {
                 val quotes = result.getOrNull()?.map { it.toQuote() } ?: emptyList()
+                println("Successfully fetched ${quotes.size} quotes from API") // Debug logging
                 cacheMutex.withLock {
-                    _cachedQuotes.value = quotes
+                    // Combine new quotes with existing fallback quotes for better variety
+                    val combinedQuotes = (fallbackQuotes + quotes).distinctBy { it.text }
+                    _cachedQuotes.value = combinedQuotes
+                    println("Cache now contains ${combinedQuotes.size} total quotes") // Debug logging
                 }
+                _error.value = null // Clear any previous errors
             } else {
                 val exception = result.exceptionOrNull()
-                _error.value = exception?.message ?: "Failed to fetch quotes"
+                val errorMsg = "Network error: ${exception?.message ?: "Unable to fetch quotes"}"
+                println("Quote refresh failed: $errorMsg") // Debug logging
+                _error.value = errorMsg
                 // Keep existing cache on failure
             }
         } catch (e: Exception) {
-            _error.value = e.message ?: "Unknown error occurred"
+            val errorMsg = "Unexpected error: ${e.message ?: "Unknown error occurred"}"
+            println("Quote refresh exception: $errorMsg") // Debug logging
+            _error.value = errorMsg
         } finally {
             _isLoading.value = false
         }
@@ -162,9 +209,12 @@ class QuoteRepositoryImpl {
         _isLoading.value = true
         
         try {
-            val result = quotableApi.getMultipleRandomQuotes(CACHE_TARGET_SIZE - _cachedQuotes.value.size)
+            // Fetch fewer quotes for refill to respect ZenQuotes rate limits (100/day)
+            val quotesToFetch = minOf(5, CACHE_TARGET_SIZE - _cachedQuotes.value.size)
+            val result = quotableApi.getMultipleRandomQuotes(quotesToFetch)
             if (result.isSuccess) {
                 val newQuotes = result.getOrNull()?.map { it.toQuote() } ?: emptyList()
+                println("Refill cache: fetched ${newQuotes.size} new quotes") // Debug logging
                 cacheMutex.withLock {
                     val currentQuotes = _cachedQuotes.value.toMutableList()
                     currentQuotes.addAll(newQuotes)
@@ -175,7 +225,7 @@ class QuoteRepositoryImpl {
             // Silently handle errors during background refill
             // User still has cached quotes to use
         } catch (e: Exception) {
-            // Silently handle errors during background refill
+            println("Background refill failed: ${e.message}") // Debug logging
         } finally {
             _isLoading.value = false
         }
