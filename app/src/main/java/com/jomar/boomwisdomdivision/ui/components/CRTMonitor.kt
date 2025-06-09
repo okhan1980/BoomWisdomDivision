@@ -293,11 +293,11 @@ fun CRTMonitor(
             Text(
                 text = "MOTIVATION",
                 style = MaterialTheme.typography.bodyLarge.copy(
-                    fontFamily = FontFamily.SansSerif,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (currentAppState == AppState.MOTIVATION) CRTGoldenGlow else Color(0xFF8B4513),
-                    letterSpacing = 1.sp
+                    fontFamily = FontFamily.Default, // Using system default which includes Inter-like fonts
+                    fontSize = 11.sp,
+                    fontWeight = if (currentAppState == AppState.MOTIVATION) FontWeight.Medium else FontWeight.Light,
+                    color = if (currentAppState == AppState.MOTIVATION) Color.Black else Color.Black.copy(alpha = 0.6f),
+                    letterSpacing = 0.5.sp
                 )
             )
         }
@@ -314,11 +314,11 @@ fun CRTMonitor(
             Text(
                 text = "MINDFULNESS",
                 style = MaterialTheme.typography.bodyLarge.copy(
-                    fontFamily = FontFamily.SansSerif,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (currentAppState == AppState.MINDFULNESS) CRTGoldenGlow else Color(0xFF8B4513),
-                    letterSpacing = 1.sp
+                    fontFamily = FontFamily.Default, // Using system default which includes Inter-like fonts
+                    fontSize = 11.sp,
+                    fontWeight = if (currentAppState == AppState.MINDFULNESS) FontWeight.Medium else FontWeight.Light,
+                    color = if (currentAppState == AppState.MINDFULNESS) Color.Black else Color.Black.copy(alpha = 0.6f),
+                    letterSpacing = 0.5.sp
                 )
             )
         }
@@ -335,11 +335,11 @@ fun CRTMonitor(
             Text(
                 text = "CREATIVITY",
                 style = MaterialTheme.typography.bodyLarge.copy(
-                    fontFamily = FontFamily.SansSerif,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (currentAppState == AppState.CREATIVITY) CRTGoldenGlow else Color(0xFF8B4513),
-                    letterSpacing = 1.sp
+                    fontFamily = FontFamily.Default, // Using system default which includes Inter-like fonts
+                    fontSize = 11.sp,
+                    fontWeight = if (currentAppState == AppState.CREATIVITY) FontWeight.Medium else FontWeight.Light,
+                    color = if (currentAppState == AppState.CREATIVITY) Color.Black else Color.Black.copy(alpha = 0.6f),
+                    letterSpacing = 0.5.sp
                 )
             )
         }
