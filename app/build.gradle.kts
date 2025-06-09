@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     // alias(libs.plugins.hilt)  // Temporarily disabled
-    alias(libs.plugins.ksp)
+    // alias(libs.plugins.ksp)  // Temporarily disabled
     // kotlin("kapt")  # Reverted to KSP
     // alias(libs.plugins.detekt)  // Disabled due to many style violations - will be re-enabled in Phase 2
     jacoco
@@ -20,7 +20,7 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "com.jomar.boomwisdomdivision.HiltTestRunner"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -62,10 +62,10 @@ android {
     }
 }
 
-// KSP configuration for Hilt
-ksp {
-    arg("dagger.hilt.android.internal.disableAndroidSuperclassValidation", "true")
-}
+// KSP configuration - temporarily disabled
+// ksp {
+//     arg("dagger.hilt.android.internal.disableAndroidSuperclassValidation", "true")
+// }
 
 dependencies {
     // Core Android dependencies
@@ -78,22 +78,22 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     
-    // Networking
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.moshi)
-    implementation(libs.moshi)
-    implementation(libs.okhttp.logging)
-    ksp(libs.moshi.codegen)
+    // Networking - Temporarily disabled
+    // implementation(libs.retrofit)
+    // implementation(libs.retrofit.moshi)
+    // implementation(libs.moshi)
+    // implementation(libs.okhttp.logging)
+    // ksp(libs.moshi.codegen)  // Temporarily disabled
     
     // Dependency Injection - Temporarily disabled
     // implementation(libs.hilt.android)
     // implementation(libs.hilt.navigation.compose)
     // ksp(libs.hilt.compiler)
     
-    // Database
-    implementation(libs.room.runtime)
-    implementation(libs.room.ktx)
-    ksp(libs.room.compiler)
+    // Database - Temporarily disabled
+    // implementation(libs.room.runtime)
+    // implementation(libs.room.ktx)
+    // ksp(libs.room.compiler)  // Temporarily disabled
     
     // Architecture Components
     implementation(libs.lifecycle.viewmodel.compose)
@@ -111,9 +111,9 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.coroutines.test)
     testImplementation(libs.turbine)
-    testImplementation(libs.room.testing)
-    testImplementation(libs.mockwebserver)
-    testImplementation(libs.hilt.testing)
+    // testImplementation(libs.room.testing)
+    // testImplementation(libs.mockwebserver)
+    // testImplementation(libs.hilt.testing)
     testImplementation(libs.truth)
     testImplementation(libs.androidx.arch.core.testing)
     
