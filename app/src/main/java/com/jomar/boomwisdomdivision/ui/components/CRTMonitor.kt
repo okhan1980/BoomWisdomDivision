@@ -71,6 +71,23 @@ fun CRTMonitor(
         ),
         label = "glow_alpha"
     )
+    
+    // Tab selection animation for smooth transitions
+    val motivationAlpha by animateFloatAsState(
+        targetValue = if (currentAppState == AppState.MOTIVATION) 1f else 0.6f,
+        animationSpec = tween(durationMillis = 200),
+        label = "motivation_alpha"
+    )
+    val mindfulnessAlpha by animateFloatAsState(
+        targetValue = if (currentAppState == AppState.MINDFULNESS) 1f else 0.6f,
+        animationSpec = tween(durationMillis = 200),
+        label = "mindfulness_alpha"
+    )
+    val creativityAlpha by animateFloatAsState(
+        targetValue = if (currentAppState == AppState.CREATIVITY) 1f else 0.6f,
+        animationSpec = tween(durationMillis = 200),
+        label = "creativity_alpha"
+    )
     Box(
         modifier = modifier.fillMaxSize()
     ) {
@@ -280,65 +297,77 @@ fun CRTMonitor(
             )
         }
         
-        // Interactive text buttons positioned over background image text
-        // MOTIVATION button - positioned over background text
+        // Interactive text buttons positioned over background image text - Tab bar behavior
+        // MOTIVATION tab button - positioned over background text
         Box(
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .offset(x = 45.dp, y = 75.dp)
-                .clickable { onAppStateChange(AppState.MOTIVATION) }
+                .clickable {
+                    if (currentAppState != AppState.MOTIVATION) {
+                        onAppStateChange(AppState.MOTIVATION)
+                    }
+                }
                 .padding(8.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = "MOTIVATION",
                 style = MaterialTheme.typography.bodyLarge.copy(
-                    fontFamily = FontFamily.Default, // Using system default which includes Inter-like fonts
+                    fontFamily = FontFamily.Default,
                     fontSize = 11.sp,
                     fontWeight = if (currentAppState == AppState.MOTIVATION) FontWeight.Medium else FontWeight.Light,
-                    color = if (currentAppState == AppState.MOTIVATION) Color.Black else Color.Black.copy(alpha = 0.6f),
+                    color = Color.Black.copy(alpha = motivationAlpha),
                     letterSpacing = 0.5.sp
                 )
             )
         }
         
-        // MINDFULNESS button - positioned over background text  
+        // MINDFULNESS tab button - positioned over background text  
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .offset(x = 0.dp, y = 75.dp)
-                .clickable { onAppStateChange(AppState.MINDFULNESS) }
+                .clickable {
+                    if (currentAppState != AppState.MINDFULNESS) {
+                        onAppStateChange(AppState.MINDFULNESS)
+                    }
+                }
                 .padding(8.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = "MINDFULNESS",
                 style = MaterialTheme.typography.bodyLarge.copy(
-                    fontFamily = FontFamily.Default, // Using system default which includes Inter-like fonts
+                    fontFamily = FontFamily.Default,
                     fontSize = 11.sp,
                     fontWeight = if (currentAppState == AppState.MINDFULNESS) FontWeight.Medium else FontWeight.Light,
-                    color = if (currentAppState == AppState.MINDFULNESS) Color.Black else Color.Black.copy(alpha = 0.6f),
+                    color = Color.Black.copy(alpha = mindfulnessAlpha),
                     letterSpacing = 0.5.sp
                 )
             )
         }
         
-        // CREATIVITY button - positioned over background text
+        // CREATIVITY tab button - positioned over background text
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .offset(x = (-45).dp, y = 75.dp)
-                .clickable { onAppStateChange(AppState.CREATIVITY) }
+                .clickable {
+                    if (currentAppState != AppState.CREATIVITY) {
+                        onAppStateChange(AppState.CREATIVITY)
+                    }
+                }
                 .padding(8.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = "CREATIVITY",
                 style = MaterialTheme.typography.bodyLarge.copy(
-                    fontFamily = FontFamily.Default, // Using system default which includes Inter-like fonts
+                    fontFamily = FontFamily.Default,
                     fontSize = 11.sp,
                     fontWeight = if (currentAppState == AppState.CREATIVITY) FontWeight.Medium else FontWeight.Light,
-                    color = if (currentAppState == AppState.CREATIVITY) Color.Black else Color.Black.copy(alpha = 0.6f),
+                    color = Color.Black.copy(alpha = creativityAlpha),
                     letterSpacing = 0.5.sp
                 )
             )

@@ -131,11 +131,17 @@ fun BoomWisdomApp() {
                                 preferencesManager.toggleFavorite(animatedQuote.id)
                             },
                             onAppStateChange = { newState ->
-                                currentAppState = newState
-                                preferencesManager.setAppState(newState)
-                                // TODO: Implement filtering logic based on app state
-                                scope.launch {
-                                    currentQuote = quoteRepository.getRandomQuote()
+                                // Tab behavior: only change if different from current state
+                                if (currentAppState != newState) {
+                                    currentAppState = newState
+                                    preferencesManager.setAppState(newState)
+                                    
+                                    // Fetch new quote when switching tabs
+                                    scope.launch {
+                                        println("Tab switched to: ${newState.displayName}")
+                                        // TODO: Implement category-specific filtering based on app state
+                                        currentQuote = quoteRepository.getRandomQuote()
+                                    }
                                 }
                             },
                             onNextQuote = {
