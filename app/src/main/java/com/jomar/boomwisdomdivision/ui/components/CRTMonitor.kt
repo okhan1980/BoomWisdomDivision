@@ -1,5 +1,6 @@
 package com.jomar.boomwisdomdivision.ui.components
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -14,6 +15,7 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,6 +38,7 @@ import com.jomar.boomwisdomdivision.ui.theme.*
 fun CRTMonitor(
     quote: Quote,
     isFavorite: Boolean = false,
+    isTransitioning: Boolean = false,
     onFavoriteClick: () -> Unit = {},
     onNextQuote: () -> Unit = {},
     onPreviousQuote: () -> Unit = {},
@@ -45,6 +48,26 @@ fun CRTMonitor(
     onRetry: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    // Star button scale animation
+    var isStarPressed by remember { mutableStateOf(false) }
+    val starScale by animateFloatAsState(
+        targetValue = if (isStarPressed) 0.95f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "star_scale"
+    )
+    
+    // Glow animation for transitions
+    val glowAlpha by animateFloatAsState(
+        targetValue = if (isTransitioning) 0.3f else 0f,
+        animationSpec = tween(
+            durationMillis = 250,
+            easing = FastOutSlowInEasing
+        ),
+        label = "glow_alpha"
+    )
     Box(
         modifier = modifier.fillMaxSize()
     ) {
@@ -72,6 +95,23 @@ fun CRTMonitor(
                         color = Color(0xFFF8F8F8), // Exact screen color from design
                         shape = RoundedCornerShape(6.dp) // Sharper corners to match background screen
                     )
+            )
+            
+            // Glow overlay for transitions
+            if (glowAlpha > 0f) {
+                Box(
+                    modifier = Modifier
+                        .size(width = 275.dp, height = 270.dp)
+                        .background(
+                            color = CRTGoldenGlow.copy(alpha = glowAlpha),
+                            shape = RoundedCornerShape(6.dp)
+                        )
+                )
+            }
+            
+            Box(
+                modifier = Modifier
+                    .size(width = 275.dp, height = 270.dp)
                     .pointerInput(Unit) {
                         detectTapGestures(
                             onTap = { offset ->
@@ -165,11 +205,16 @@ fun CRTMonitor(
                 .align(Alignment.BottomStart)
                 .offset(x = 125.dp, y = (-36).dp) // Moved 5dp more right (120+5=125) and 1dp up (-35-1=-36)
                 .size(width = 150.dp, height = 77.dp) // Made 2dp taller (75+2=77)
+                .graphicsLayer {
+                    scaleX = starScale
+                    scaleY = starScale
+                }
                 .background(
                     CRTGlow,
                     RoundedCornerShape(37.dp)
                 )
                 .clickable { 
+                    isStarPressed = true
                     onFavoriteClick()
                     onNextQuote() // Also change to next quote when star is pressed
                 },
@@ -181,6 +226,14 @@ fun CRTMonitor(
                 tint = Color.Black,
                 modifier = Modifier.size(38.dp)
             )
+        }
+        
+        // Reset star press state after animation
+        LaunchedEffect(isStarPressed) {
+            if (isStarPressed) {
+                delay(100)
+                isStarPressed = false
+            }
         }
         
         // Favorites list button - positioned to exactly cover background bookmark button
@@ -236,6 +289,7 @@ fun CRTMonitorPreview() {
                 author = "Eleanor Roosevelt"
             ),
             isFavorite = false,
+            isTransitioning = false,
             onViewFavorites = {},
             isLoading = false,
             error = null

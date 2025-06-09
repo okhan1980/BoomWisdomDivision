@@ -4,10 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.*
+import androidx.compose.animation.*
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
@@ -16,6 +14,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.animation.AnimatedContent
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -88,18 +87,43 @@ fun BoomWisdomApp() {
         ) {
             composable("main") {
                 currentQuote?.let { quote ->
+                    // Add a glow state for quote transitions
+                    var isTransitioning by remember { mutableStateOf(false) }
+                    
+                    // Trigger glow animation on quote change
+                    LaunchedEffect(quote) {
+                        isTransitioning = true
+                        delay(1500) // Total animation time
+                        isTransitioning = false
+                    }
+                    
                     // Full-screen CRT Monitor with backdrop
                     AnimatedContent(
                         targetState = quote,
                         transitionSpec = {
-                            fadeIn(animationSpec = tween(750)) togetherWith 
-                            fadeOut(animationSpec = tween(750))
+                            // Custom transition: glow -> fade out -> fade in -> unglow
+                            val fadeOutDuration = 500
+                            val fadeInDuration = 500
+                            val glowDuration = 250
+                            
+                            fadeIn(
+                                animationSpec = tween(
+                                    durationMillis = fadeInDuration,
+                                    delayMillis = fadeOutDuration + glowDuration
+                                )
+                            ) togetherWith fadeOut(
+                                animationSpec = tween(
+                                    durationMillis = fadeOutDuration,
+                                    delayMillis = glowDuration
+                                )
+                            )
                         },
                         label = "quote_transition"
                     ) { animatedQuote ->
                         CRTMonitor(
                             quote = animatedQuote,
                             isFavorite = favoriteIds.contains(animatedQuote.id),
+                            isTransitioning = isTransitioning,
                             onFavoriteClick = {
                                 preferencesManager.toggleFavorite(animatedQuote.id)
                             },
