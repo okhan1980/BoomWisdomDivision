@@ -2,8 +2,9 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.hilt)
+    // alias(libs.plugins.hilt)  // Temporarily disabled
     alias(libs.plugins.ksp)
+    // kotlin("kapt")  # Reverted to KSP
     // alias(libs.plugins.detekt)  // Disabled due to many style violations - will be re-enabled in Phase 2
     jacoco
 }
@@ -61,6 +62,11 @@ android {
     }
 }
 
+// KSP configuration for Hilt
+ksp {
+    arg("dagger.hilt.android.internal.disableAndroidSuperclassValidation", "true")
+}
+
 dependencies {
     // Core Android dependencies
     implementation(libs.androidx.core.ktx)
@@ -79,15 +85,10 @@ dependencies {
     implementation(libs.okhttp.logging)
     ksp(libs.moshi.codegen)
     
-    // Dependency Injection
-    implementation(libs.hilt.android) {
-        exclude(group = "com.squareup", module = "javapoet")
-    }
-    implementation(libs.hilt.navigation.compose)
-    implementation(libs.javapoet) // Fixes canonicalName() method issue
-    ksp(libs.hilt.compiler) {
-        exclude(group = "com.squareup", module = "javapoet")
-    }
+    // Dependency Injection - Temporarily disabled
+    // implementation(libs.hilt.android)
+    // implementation(libs.hilt.navigation.compose)
+    // ksp(libs.hilt.compiler)
     
     // Database
     implementation(libs.room.runtime)
