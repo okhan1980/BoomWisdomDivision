@@ -1,5 +1,6 @@
 package com.jomar.boomwisdomdivision.data.di
 
+import com.jomar.boomwisdomdivision.BuildConfig
 import com.jomar.boomwisdomdivision.data.api.QuotableApi
 import com.jomar.boomwisdomdivision.data.api.interceptor.LoggingInterceptor
 import com.jomar.boomwisdomdivision.core.util.Constants
@@ -12,7 +13,6 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
@@ -30,8 +30,8 @@ object NetworkModule {
     /**
      * Provides a configured Moshi instance for JSON serialization/deserialization.
      * 
-     * Moshi is configured with the Kotlin adapter factory to support Kotlin-specific
-     * features like data classes, default parameters, and nullable types.
+     * Moshi is configured to use code generation (via KSP) for JSON adapters,
+     * which provides better performance than reflection-based adapters.
      * 
      * @return Configured [Moshi] instance
      */
@@ -39,7 +39,6 @@ object NetworkModule {
     @Singleton
     fun provideMoshi(): Moshi {
         return Moshi.Builder()
-            .add(KotlinJsonAdapterFactory())
             .build()
     }
     
@@ -56,7 +55,7 @@ object NetworkModule {
     @Singleton
     fun provideHttpLoggingInterceptor(): HttpLoggingInterceptor {
         return HttpLoggingInterceptor().apply {
-            level = if (com.jomar.boomwisdomdivision.BuildConfig.DEBUG) {
+            level = if (BuildConfig.DEBUG) {
                 HttpLoggingInterceptor.Level.BODY
             } else {
                 HttpLoggingInterceptor.Level.BASIC
