@@ -181,3 +181,17 @@ Each phase must pass these checks:
 5. Begin next phase with fresh plan
 
 This ensures focus on current work while preserving project history.
+
+## 🚨 MANDATORY: Pull Request Workflow
+
+**CRITICAL**: Never push directly to main branch!
+
+### All changes must follow PR workflow:
+1. Create feature branch: `git checkout -b feature/description`
+2. Make changes and commit
+3. Push branch: `git push -u origin feature/branch-name`
+4. Create PR: `gh pr create`
+5. Wait for review and approval
+6. Only merge after explicit approval
+
+See `PR_WORKFLOW.md` for complete guidelines.
