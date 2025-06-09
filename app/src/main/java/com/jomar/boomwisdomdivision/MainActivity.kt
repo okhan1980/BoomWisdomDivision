@@ -14,8 +14,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.animation.AnimatedContent
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import com.jomar.boomwisdomdivision.model.Quote
-import com.jomar.boomwisdomdivision.model.QuoteRepository
+import com.jomar.boomwisdomdivision.data.repository.QuoteRepositoryImpl
 import com.jomar.boomwisdomdivision.ui.components.CRTMonitor
 import com.jomar.boomwisdomdivision.ui.theme.BoomWisdomDivisionTheme
 import com.jomar.boomwisdomdivision.ui.theme.CRTBackground
@@ -34,46 +36,68 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun BoomWisdomApp() {
-    var currentQuoteIndex by remember { mutableStateOf(0) }
-    var favorites by remember { mutableStateOf(setOf<Int>()) }
+    val quoteRepository = remember { QuoteRepositoryImpl.getInstance() }
+    var currentQuote by remember { mutableStateOf<Quote?>(null) }
+    var favorites by remember { mutableStateOf(setOf<String>()) }
+    val scope = rememberCoroutineScope()
     
-    val currentQuote = QuoteRepository.getQuoteByIndex(currentQuoteIndex)
+    // Observe loading state and errors
+    val isLoading by quoteRepository.isLoading.collectAsStateWithLifecycle()
+    val error by quoteRepository.error.collectAsStateWithLifecycle()
+    val cachedQuotes by quoteRepository.cachedQuotes.collectAsStateWithLifecycle()
+    
+    // Load initial quote
+    LaunchedEffect(Unit) {
+        currentQuote = quoteRepository.getRandomQuote()
+        // Trigger initial cache refresh
+        quoteRepository.refreshQuotes()
+    }
     
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = CRTBackground
     ) {
-        // Full-screen CRT Monitor with backdrop
-        AnimatedContent(
-            targetState = currentQuote,
-            transitionSpec = {
-                fadeIn(animationSpec = tween(750)) togetherWith 
-                fadeOut(animationSpec = tween(750))
-            },
-            label = "quote_transition"
-        ) { quote ->
-            CRTMonitor(
-                quote = quote,
-                isFavorite = favorites.contains(quote.id),
-                onFavoriteClick = {
-                    val isFav = favorites.contains(quote.id)
-                    favorites = if (isFav) {
-                        favorites - quote.id
-                    } else {
-                        favorites + quote.id
-                    }
+        currentQuote?.let { quote ->
+            // Full-screen CRT Monitor with backdrop
+            AnimatedContent(
+                targetState = quote,
+                transitionSpec = {
+                    fadeIn(animationSpec = tween(750)) togetherWith 
+                    fadeOut(animationSpec = tween(750))
                 },
-                onNextQuote = {
-                    currentQuoteIndex = (currentQuoteIndex + 1) % QuoteRepository.getQuoteCount()
-                },
-                onPreviousQuote = {
-                    currentQuoteIndex = if (currentQuoteIndex > 0) {
-                        currentQuoteIndex - 1
-                    } else {
-                        QuoteRepository.getQuoteCount() - 1
+                label = "quote_transition"
+            ) { animatedQuote ->
+                CRTMonitor(
+                    quote = animatedQuote,
+                    isFavorite = favorites.contains(animatedQuote.id),
+                    onFavoriteClick = {
+                        val isFav = favorites.contains(animatedQuote.id)
+                        favorites = if (isFav) {
+                            favorites - animatedQuote.id
+                        } else {
+                            favorites + animatedQuote.id
+                        }
+                    },
+                    onNextQuote = {
+                        scope.launch {
+                            currentQuote = quoteRepository.getRandomQuote()
+                        }
+                    },
+                    onPreviousQuote = {
+                        scope.launch {
+                            currentQuote = quoteRepository.getRandomQuote()
+                        }
+                    },
+                    isLoading = isLoading,
+                    error = error,
+                    onRetry = {
+                        scope.launch {
+                            quoteRepository.clearError()
+                            quoteRepository.refreshQuotes()
+                        }
                     }
-                }
-            )
+                )
+            }
         }
     }
 }

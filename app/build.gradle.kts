@@ -78,12 +78,9 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     
-    // Networking - Temporarily disabled
-    // implementation(libs.retrofit)
-    // implementation(libs.retrofit.moshi)
-    // implementation(libs.moshi)
-    // implementation(libs.okhttp.logging)
-    // ksp(libs.moshi.codegen)  // Temporarily disabled
+    // Networking for Phase 3
+    implementation(libs.okhttp.logging)
+    implementation(libs.moshi)
     
     // Dependency Injection - Temporarily disabled
     // implementation(libs.hilt.android)

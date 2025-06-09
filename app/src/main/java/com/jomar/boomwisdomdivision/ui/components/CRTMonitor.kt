@@ -38,6 +38,9 @@ fun CRTMonitor(
     onFavoriteClick: () -> Unit = {},
     onNextQuote: () -> Unit = {},
     onPreviousQuote: () -> Unit = {},
+    isLoading: Boolean = false,
+    error: String? = null,
+    onRetry: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -82,27 +85,82 @@ fun CRTMonitor(
                     },
                 contentAlignment = Alignment.Center
             ) {
-                // Quote text with perspective transformation to simulate angled CRT screen
-                Text(
-                    text = quote.text.uppercase(),
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontFamily = FontFamily.SansSerif, // Clean sans-serif like in design
-                        fontSize = 17.sp, // Increased for larger screen area
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF2A2A2A), // Dark gray text
-                        lineHeight = 22.sp,
-                        letterSpacing = 1.2.sp // Optimized letter spacing
-                    ),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp)
-                        .graphicsLayer {
-                            // Apply perspective transformation to simulate angled viewing
-                            rotationX = -5f // Slight upward tilt to simulate CRT angle
-                            scaleY = 0.95f // Slightly compress vertically for perspective
+                when {
+                    isLoading -> {
+                        // Loading indicator
+                        Text(
+                            text = "LOADING WISDOM...",
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF2A2A2A),
+                                letterSpacing = 2.sp
+                            ),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp)
+                        )
+                    }
+                    error != null -> {
+                        // Error message with retry option
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp)
+                        ) {
+                            Text(
+                                text = "WISDOM OFFLINE",
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF8B0000),
+                                    letterSpacing = 1.sp
+                                ),
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                text = "TAP TO RETRY",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF555555),
+                                    letterSpacing = 1.sp
+                                ),
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .padding(top = 8.dp)
+                                    .clickable { onRetry() }
+                            )
                         }
-                )
+                    }
+                    else -> {
+                        // Quote text with perspective transformation to simulate angled CRT screen
+                        Text(
+                            text = quote.text.uppercase(),
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontFamily = FontFamily.SansSerif, // Clean sans-serif like in design
+                                fontSize = 17.sp, // Increased for larger screen area
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF2A2A2A), // Dark gray text
+                                lineHeight = 22.sp,
+                                letterSpacing = 1.2.sp // Optimized letter spacing
+                            ),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp)
+                                .graphicsLayer {
+                                    // Apply perspective transformation to simulate angled viewing
+                                    rotationX = -5f // Slight upward tilt to simulate CRT angle
+                                    scaleY = 0.95f // Slightly compress vertically for perspective
+                                }
+                        )
+                    }
+                }
             }
         }
         
@@ -209,7 +267,9 @@ fun CRTMonitorPreview() {
                 text = "The future belongs to those who believe in the beauty of their dreams",
                 author = "Eleanor Roosevelt"
             ),
-            isFavorite = false
+            isFavorite = false,
+            isLoading = false,
+            error = null
         )
     }
 }
