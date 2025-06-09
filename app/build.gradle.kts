@@ -23,6 +23,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            isTestCoverageEnabled = true
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -43,11 +46,11 @@ android {
         buildConfig = true
     }
     
-    // Test coverage configuration
-    testCoverageEnabled = true
-    
     testOptions {
-        unitTests.isIncludeAndroidResources = true
+        unitTests {
+            isIncludeAndroidResources = true
+            isReturnDefaultValues = true
+        }
         animationsDisabled = true
     }
     
