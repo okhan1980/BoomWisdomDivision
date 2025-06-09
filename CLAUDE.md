@@ -146,7 +146,7 @@ The project follows a phased approach with PR reviews after each phase:
 
 ### Pre-Development Checklist
 - [ ] Verify Android Studio has SDK 35 installed
-- [ ] Confirm JDK 17 is being used
+- [ ] Confirm JDK 17 is being used (REQUIRED - AGP 8.10.1 needs Java 17)
 - [ ] Review package structure requirements
 - [ ] Understand layer dependencies (data → domain ← presentation)
 - [ ] Check that minSdk will be changed to 26 in Phase 1
