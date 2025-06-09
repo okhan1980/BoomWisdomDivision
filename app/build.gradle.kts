@@ -82,6 +82,7 @@ dependencies {
     // Dependency Injection
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)
+    implementation(libs.javapoet) // Fixes canonicalName() method issue
     ksp(libs.hilt.compiler)
     
     // Database
