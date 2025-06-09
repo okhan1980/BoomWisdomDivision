@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.*
@@ -38,6 +39,7 @@ fun CRTMonitor(
     onFavoriteClick: () -> Unit = {},
     onNextQuote: () -> Unit = {},
     onPreviousQuote: () -> Unit = {},
+    onViewFavorites: () -> Unit = {},
     isLoading: Boolean = false,
     error: String? = null,
     onRetry: () -> Unit = {},
@@ -181,7 +183,7 @@ fun CRTMonitor(
             )
         }
         
-        // Bookmark button - positioned to exactly cover background bookmark button
+        // Favorites list button - positioned to exactly cover background bookmark button
         Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
@@ -191,7 +193,7 @@ fun CRTMonitor(
                     Color.Transparent,
                     CircleShape
                 )
-                .clickable { /* TODO: Implement bookmark */ },
+                .clickable { onViewFavorites() },
             contentAlignment = Alignment.Center
         ) {
             // Border ring
@@ -215,8 +217,8 @@ fun CRTMonitor(
             }
             
             Icon(
-                imageVector = Icons.Outlined.FavoriteBorder,
-                contentDescription = "Bookmark",
+                imageVector = Icons.Filled.Favorite,
+                contentDescription = "View favorites",
                 tint = CRTGlow,
                 modifier = Modifier.size(30.dp)
             )
@@ -234,6 +236,7 @@ fun CRTMonitorPreview() {
                 author = "Eleanor Roosevelt"
             ),
             isFavorite = false,
+            onViewFavorites = {},
             isLoading = false,
             error = null
         )

@@ -16,11 +16,17 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.animation.AnimatedContent
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.jomar.boomwisdomdivision.model.Quote
 import com.jomar.boomwisdomdivision.data.repository.QuoteRepositoryImpl
+import com.jomar.boomwisdomdivision.data.preferences.PreferencesManager
 import com.jomar.boomwisdomdivision.ui.components.CRTMonitor
+import com.jomar.boomwisdomdivision.ui.screens.FavoritesScreen
 import com.jomar.boomwisdomdivision.ui.theme.BoomWisdomDivisionTheme
 import com.jomar.boomwisdomdivision.ui.theme.CRTBackground
+import androidx.compose.ui.platform.LocalContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,10 +42,15 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun BoomWisdomApp() {
+    val navController = rememberNavController()
+    val context = LocalContext.current
     val quoteRepository = remember { QuoteRepositoryImpl.getInstance() }
+    val preferencesManager = remember { PreferencesManager.getInstance(context) }
     var currentQuote by remember { mutableStateOf<Quote?>(null) }
-    var favorites by remember { mutableStateOf(setOf<String>()) }
     val scope = rememberCoroutineScope()
+    
+    // Observe favorites from preferences
+    val favoriteIds by preferencesManager.favoriteQuotes.collectAsStateWithLifecycle()
     
     // Observe loading state and errors
     val isLoading by quoteRepository.isLoading.collectAsStateWithLifecycle()
@@ -48,15 +59,22 @@ fun BoomWisdomApp() {
     
     // Load initial quote
     LaunchedEffect(Unit) {
-        // Always start with a cached/fallback quote for immediate display
-        currentQuote = quoteRepository.getRandomQuote()
+        // Check if we have a last viewed quote
+        val lastViewed = preferencesManager.getLastViewedQuote()
+        currentQuote = lastViewed ?: quoteRepository.getRandomQuote()
+        
         // Trigger initial cache refresh in background
-        // Don't block the UI for this
         try {
             quoteRepository.refreshQuotes()
         } catch (e: Exception) {
             println("Background refresh failed: ${e.message}")
-            // Don't show error immediately - user has quotes to see
+        }
+    }
+    
+    // Save current quote when it changes
+    LaunchedEffect(currentQuote) {
+        currentQuote?.let { quote ->
+            preferencesManager.saveLastViewedQuote(quote)
         }
     }
     
@@ -64,46 +82,68 @@ fun BoomWisdomApp() {
         modifier = Modifier.fillMaxSize(),
         color = CRTBackground
     ) {
-        currentQuote?.let { quote ->
-            // Full-screen CRT Monitor with backdrop
-            AnimatedContent(
-                targetState = quote,
-                transitionSpec = {
-                    fadeIn(animationSpec = tween(750)) togetherWith 
-                    fadeOut(animationSpec = tween(750))
-                },
-                label = "quote_transition"
-            ) { animatedQuote ->
-                CRTMonitor(
-                    quote = animatedQuote,
-                    isFavorite = favorites.contains(animatedQuote.id),
-                    onFavoriteClick = {
-                        val isFav = favorites.contains(animatedQuote.id)
-                        favorites = if (isFav) {
-                            favorites - animatedQuote.id
-                        } else {
-                            favorites + animatedQuote.id
-                        }
+        NavHost(
+            navController = navController,
+            startDestination = "main"
+        ) {
+            composable("main") {
+                currentQuote?.let { quote ->
+                    // Full-screen CRT Monitor with backdrop
+                    AnimatedContent(
+                        targetState = quote,
+                        transitionSpec = {
+                            fadeIn(animationSpec = tween(750)) togetherWith 
+                            fadeOut(animationSpec = tween(750))
+                        },
+                        label = "quote_transition"
+                    ) { animatedQuote ->
+                        CRTMonitor(
+                            quote = animatedQuote,
+                            isFavorite = favoriteIds.contains(animatedQuote.id),
+                            onFavoriteClick = {
+                                preferencesManager.toggleFavorite(animatedQuote.id)
+                            },
+                            onNextQuote = {
+                                scope.launch {
+                                    println("User requested next quote") // Debug
+                                    currentQuote = quoteRepository.getRandomQuote()
+                                }
+                            },
+                            onPreviousQuote = {
+                                scope.launch {
+                                    println("User requested previous quote") // Debug  
+                                    currentQuote = quoteRepository.getRandomQuote()
+                                }
+                            },
+                            onViewFavorites = {
+                                navController.navigate("favorites")
+                            },
+                            isLoading = isLoading,
+                            error = error,
+                            onRetry = {
+                                scope.launch {
+                                    quoteRepository.clearError()
+                                    quoteRepository.refreshQuotes()
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+            
+            composable("favorites") {
+                val favoriteQuotes = quoteRepository.getQuotesByIds(favoriteIds)
+                FavoritesScreen(
+                    favoriteQuotes = favoriteQuotes,
+                    onBackClick = {
+                        navController.popBackStack()
                     },
-                    onNextQuote = {
-                        scope.launch {
-                            println("User requested next quote") // Debug
-                            currentQuote = quoteRepository.getRandomQuote()
-                        }
+                    onQuoteClick = { quote ->
+                        currentQuote = quote
+                        navController.popBackStack()
                     },
-                    onPreviousQuote = {
-                        scope.launch {
-                            println("User requested previous quote") // Debug  
-                            currentQuote = quoteRepository.getRandomQuote()
-                        }
-                    },
-                    isLoading = isLoading,
-                    error = error,
-                    onRetry = {
-                        scope.launch {
-                            quoteRepository.clearError()
-                            quoteRepository.refreshQuotes()
-                        }
+                    onToggleFavorite = { quote ->
+                        preferencesManager.toggleFavorite(quote.id)
                     }
                 )
             }

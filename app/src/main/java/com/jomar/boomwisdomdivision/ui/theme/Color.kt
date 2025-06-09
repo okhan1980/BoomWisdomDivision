@@ -11,6 +11,11 @@ val CRTGlowDim = Color(0xFFB8860B) // Dimmer golden glow
 val CRTFrame = Color(0xFF2A2A2A) // Dark grey monitor frame
 val CRTScanlines = Color(0xFF1A1A1A) // Subtle scanline effect
 
+// Additional colors for UI components
+val CRTGoldenGlow = Color(0xFFFFD700) // Same as CRTGlow
+val CRTScreenBackground = Color(0xFFF8F8F8) // Light background for cards
+val CRTTextColor = Color(0xFF2A2A2A) // Dark text color
+
 // Legacy colors (kept for compatibility)
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)

@@ -140,6 +140,15 @@ class QuoteRepositoryImpl {
     }
     
     /**
+     * Get quotes by their IDs (for favorites display)
+     */
+    fun getQuotesByIds(ids: Set<String>): List<Quote> {
+        return _cachedQuotes.value.filter { quote ->
+            ids.contains(quote.id)
+        }
+    }
+    
+    /**
      * Refresh quote cache from API - uses Quotable.io's generous rate limits
      */
     suspend fun refreshQuotes() {

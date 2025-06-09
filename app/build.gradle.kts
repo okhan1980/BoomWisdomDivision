@@ -97,6 +97,9 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.lifecycle.runtime.compose)
     
+    // Navigation
+    implementation(libs.navigation.compose)
+    
     // Coroutines
     implementation(libs.coroutines.android)
     
