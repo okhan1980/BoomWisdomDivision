@@ -30,6 +30,21 @@ sealed class Result<out T> {
      * This is useful for UI state management during async operations.
      */
     data object Loading : Result<Nothing>()
+    
+    companion object {
+        /**
+         * Executes a suspending function and wraps the result in a [Result].
+         * Catches any exceptions and returns them as [Result.Error].
+         * 
+         * @param block The suspending function to execute
+         * @return [Result.Success] with the result, or [Result.Error] if an exception occurred
+         */
+        suspend inline fun <T> runCatching(block: () -> T): Result<T> = try {
+            Success(block())
+        } catch (e: Exception) {
+            Error(e)
+        }
+    }
 
     /**
      * Returns true if this result represents a successful operation.
@@ -73,7 +88,7 @@ sealed class Result<out T> {
      * 
      * @param defaultValue The value to return if this is not a Success
      */
-    fun getOrDefault(defaultValue: T): T = when (this) {
+    fun getOrDefault(defaultValue: @UnsafeVariance T): T = when (this) {
         is Success -> data
         else -> defaultValue
     }
@@ -174,21 +189,3 @@ fun <T> Result.Companion.error(message: String): Result<T> =
  * Creates a loading Result.
  */
 fun <T> Result.Companion.loading(): Result<T> = Result.Loading
-
-/**
- * Companion object for Result factory methods.
- */
-object ResultCompanion {
-    /**
-     * Executes a suspending function and wraps the result in a [Result].
-     * Catches any exceptions and returns them as [Result.Error].
-     * 
-     * @param block The suspending function to execute
-     * @return [Result.Success] with the result, or [Result.Error] if an exception occurred
-     */
-    suspend inline fun <T> runCatching(block: () -> T): Result<T> = try {
-        Result.Success(block())
-    } catch (e: Exception) {
-        Result.Error(e)
-    }
-}
