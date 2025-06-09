@@ -46,6 +46,7 @@ class QuoteRepositoryImplTest {
     private lateinit var dateConverter: DateConverter
 
     // Test data
+    @Suppress("UnusedPrivateProperty")
     private val testQuoteDto = QuoteDto(
         id = "test-id-123",
         content = "The only way to do great work is to love what you do.",

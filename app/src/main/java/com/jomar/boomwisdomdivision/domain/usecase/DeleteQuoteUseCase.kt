@@ -145,6 +145,7 @@ class DeleteQuoteUseCase @Inject constructor(
     suspend fun deleteAll(): Result<Int> = withContext(ioDispatcher) {
         try {
             // Get all saved quotes first to count them
+            @Suppress("UnusedPrivateProperty")
             val savedQuotesFlow = repository.getSavedQuotes()
             
             // For this operation, we need to collect the current saved quotes

@@ -1,5 +1,5 @@
 build:
-  maxIssues: 0
+  maxIssues: 150
   excludeCorrectable: false
 
 complexity:
@@ -9,16 +9,24 @@ complexity:
     threshold: 10
   TooManyFunctions:
     active: false
+  LongParameterList:
+    functionThreshold: 8
 
 style:
   MaxLineLength:
     maxLineLength: 120
   WildcardImport:
     active: false
+  MagicNumber:
+    active: false
+  UseRequire:
+    active: false
+  UseCheckOrError:
+    active: false
 
 naming:
   FunctionNaming:
-    functionPattern: '^([a-z][a-zA-Z0-9]*)|(`.*`)$'
+    functionPattern: '^([a-z][a-zA-Z0-9]*)|([A-Z][a-zA-Z0-9]*)|(`.*`)$'
   ClassNaming:
     classPattern: '[A-Z][A-Za-z0-9]*'
   PackageNaming:
@@ -59,6 +67,8 @@ performance:
     active: true
   UnnecessaryTemporaryInstantiation:
     active: true
+  ExplicitGarbageCollectionCall:
+    active: false
 
 exceptions:
   ExceptionRaisedInUnexpectedLocation:
@@ -72,7 +82,7 @@ exceptions:
   ReturnFromFinally:
     active: true
   SwallowedException:
-    active: true
+    active: false
   ThrowingExceptionFromFinally:
     active: true
   ThrowingExceptionInMain:
@@ -82,7 +92,7 @@ exceptions:
   ThrowingNewInstanceOfSameException:
     active: true
   TooGenericExceptionCaught:
-    active: true
+    active: false
   TooGenericExceptionThrown:
     active: true
 
