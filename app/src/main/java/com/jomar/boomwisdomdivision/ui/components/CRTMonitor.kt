@@ -5,6 +5,8 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,6 +15,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material3.ripple
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import kotlinx.coroutines.delay
@@ -65,17 +68,17 @@ fun CRTMonitor(
     
     // Tab selection animation with stronger visual contrast
     val motivationAlpha by animateFloatAsState(
-        targetValue = if (currentAppState == AppState.MOTIVATION) 1f else 0.3f,
+        targetValue = if (currentAppState == AppState.MOTIVATION) 1f else 0.6f,
         animationSpec = tween(durationMillis = 200),
         label = "motivation_alpha"
     )
     val mindfulnessAlpha by animateFloatAsState(
-        targetValue = if (currentAppState == AppState.MINDFULNESS) 1f else 0.3f,
+        targetValue = if (currentAppState == AppState.MINDFULNESS) 1f else 0.6f,
         animationSpec = tween(durationMillis = 200),
         label = "mindfulness_alpha"
     )
     val creativityAlpha by animateFloatAsState(
-        targetValue = if (currentAppState == AppState.CREATIVITY) 1f else 0.3f,
+        targetValue = if (currentAppState == AppState.CREATIVITY) 1f else 0.6f,
         animationSpec = tween(durationMillis = 200),
         label = "creativity_alpha"
     )
@@ -109,8 +112,8 @@ fun CRTMonitor(
     ) {
         // Full-screen backdrop using different images based on app state
         val backgroundResource = when (currentAppState) {
-            AppState.MOTIVATION -> R.drawable.boom_wisdom_app_bg
-            AppState.CREATIVITY -> R.drawable.boom_wisdom_app_creative_bg
+            AppState.MOTIVATION -> R.drawable.wisdom_inspiration_bg
+            AppState.CREATIVITY -> R.drawable.wisdom_creativity_bg
             AppState.MINDFULNESS -> R.drawable.boom_wisdom_backdrop // Keep original for mindfulness
         }
         
@@ -131,27 +134,17 @@ fun CRTMonitor(
         }
         
         // Quote text overlay positioned to completely fill CRT screen area
-        // Adjust size and position based on app state (different monitor backgrounds)
-        val screenHeight = if (currentAppState == AppState.CREATIVITY) 215.dp else 275.dp // 60dp shorter total for Creativity mode
+        // Use same dimensions for all states to maintain consistent positioning
+        val screenHeight = if (currentAppState == AppState.CREATIVITY || currentAppState == AppState.MOTIVATION) 215.dp else 275.dp
         val screenWidth = 282.dp
         
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 294.dp, start = 63.dp, end = 53.dp), // Moved down 20dp (274 + 20 = 294)
+                .padding(top = 314.dp, start = 63.dp, end = 53.dp), // Moved down 40dp total (274 + 40 = 314)
             contentAlignment = Alignment.TopCenter
         ) {
-            // White canvas overlay COMPLETELY filling CRT screen from background image
-            Box(
-                modifier = Modifier
-                    .size(width = screenWidth, height = screenHeight)
-                    .background(
-                        color = Color(0xFFF8F8F8), // Exact screen color from design
-                        shape = RoundedCornerShape(6.dp) // Sharper corners to match background screen
-                    )
-            )
-            
-            // Removed glow overlay
+            // Removed white background overlay - keeping only text
             
             Box(
                 modifier = Modifier
@@ -186,39 +179,34 @@ fun CRTMonitor(
                             )
                         }
                         else -> {
-                            // Calculate dynamic font size based on text length
+                            // Use fixed font size as requested
                             val baseText = animatedQuote.text.uppercase()
-                            val textLength = baseText.length
-                            val dynamicFontSize = when {
-                                textLength <= 50 -> 17.sp
-                                textLength <= 100 -> 15.sp
-                                textLength <= 150 -> 13.sp
-                                textLength <= 200 -> 11.sp
-                                else -> 10.sp
+                            val fontSize = 26.sp
+                            val lineHeight = 31.sp
+                            
+                            // Dynamic text color based on app state
+                            val textColor = if (currentAppState == AppState.CREATIVITY) {
+                                Color(0xFFDED1CF) // Light beige for creativity
+                            } else {
+                                Color(0xFF2A2A2A) // Dark gray for motivation/mindfulness
                             }
-                            val dynamicLineHeight = dynamicFontSize * 1.3f
                             
                             // Quote text with perspective transformation to simulate angled CRT screen
                             Text(
                                 text = baseText,
                                 style = MaterialTheme.typography.bodyLarge.copy(
-                                    fontFamily = FontFamily.SansSerif, // Clean sans-serif like in design
-                                    fontSize = dynamicFontSize,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF2A2A2A), // Dark gray text
-                                    lineHeight = dynamicLineHeight,
-                                    letterSpacing = 1.2.sp // Optimized letter spacing
+                                    fontFamily = InterFontFamily, // Inter font from Google Fonts
+                                    fontSize = fontSize,
+                                    fontWeight = FontWeight.Light,
+                                    color = textColor,
+                                    lineHeight = lineHeight,
+                                    letterSpacing = 0.8.sp
                                 ),
-                                textAlign = TextAlign.Center,
+                                textAlign = TextAlign.Left,
                                 maxLines = 8, // Limit to prevent overflow into author area
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 20.dp)
-                                    .graphicsLayer {
-                                        // Apply perspective transformation to simulate angled viewing
-                                        rotationX = -5f // Slight upward tilt to simulate CRT angle
-                                        scaleY = 0.95f // Slightly compress vertically for perspective
-                                    }
                             )
                         }
                     }
@@ -226,72 +214,37 @@ fun CRTMonitor(
             }
         }
         
-        // Author attribution positioned like in design (bottom right of moved CRT screen)
-        // Adjust position based on screen height for different app states
-        val authorTopPadding = if (currentAppState == AppState.CREATIVITY) 469.dp else 529.dp // Moved down 20dp (449+20=469, 509+20=529)
-        
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = authorTopPadding, end = 95.dp),
-            contentAlignment = Alignment.TopEnd
-        ) {
-            AnimatedContent(
-                targetState = quote.author,
-                transitionSpec = {
-                    // Simple fade transition for author text only
-                    fadeIn(animationSpec = tween(durationMillis = 300)) togetherWith 
-                    fadeOut(animationSpec = tween(durationMillis = 300))
-                },
-                label = "author_text_transition"
-            ) { animatedAuthor ->
-                Box(
-                    modifier = Modifier
-                        .background(
-                            CRTGlow,
-                            RoundedCornerShape(6.dp)
-                        )
-                        .padding(10.dp, 5.dp)
-                ) {
-                    Text(
-                        text = "— $animatedAuthor",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontSize = 11.sp,
-                            color = Color.Black,
-                            fontWeight = FontWeight.Medium
-                        )
-                    )
-                }
-            }
-        }
+        // Removed author attribution and yellow rectangle
         
         // Interactive buttons positioned to perfectly overlap background image buttons
-        // Star button - moved 5dp more right and made 2dp taller (1dp up, 1dp down)
+        // Star button - using custom button image
         Box(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .offset(x = 125.dp, y = (-36).dp) // Moved 5dp more right (120+5=125) and 1dp up (-35-1=-36)
-                .size(width = 150.dp, height = 77.dp) // Made 2dp taller (75+2=77)
+                .offset(x = 125.dp, y = (-41).dp) // Moved up 5dp more (-36-5=-41)
+                .size(width = 172.dp, height = 88.dp) // 12% smaller (195*0.88=172, 100*0.88=88)
                 .graphicsLayer {
                     scaleX = starScale
                     scaleY = starScale
                 }
-                .background(
-                    CRTGlow,
-                    RoundedCornerShape(37.dp)
-                )
-                .clickable { 
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = ripple(
+                        bounded = true,
+                        radius = 46.dp
+                    )
+                ) { 
                     isStarPressed = true
                     onFavoriteClick()
                     onNextQuote() // Also change to next quote when star is pressed
                 },
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.Star,
+            Image(
+                painter = painterResource(id = R.drawable.button_wisdom),
                 contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
-                tint = Color.Black,
-                modifier = Modifier.size(38.dp)
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit
             )
         }
         
@@ -303,44 +256,26 @@ fun CRTMonitor(
             }
         }
         
-        // Favorites list button - positioned to exactly cover background bookmark button
+        // Favorites list button - using custom button image
         Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .offset(x = (-50).dp, y = (-60).dp)
-                .size(60.dp)
-                .background(
-                    Color.Transparent,
-                    CircleShape
-                )
-                .clickable { onViewFavorites() },
+                .size(51.dp)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = ripple(
+                        bounded = true,
+                        radius = 26.dp
+                    )
+                ) { onViewFavorites() },
             contentAlignment = Alignment.Center
         ) {
-            // Border ring
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Color.Transparent,
-                        CircleShape
-                    )
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(3.dp)
-                        .background(
-                            Color.Transparent,
-                            CircleShape
-                        )
-                )
-            }
-            
-            Icon(
-                imageVector = Icons.Filled.Favorite,
+            Image(
+                painter = painterResource(id = R.drawable.button_saved),
                 contentDescription = "View favorites",
-                tint = CRTGlow,
-                modifier = Modifier.size(30.dp)
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit
             )
         }
         
@@ -349,17 +284,23 @@ fun CRTMonitor(
         Box(
             modifier = Modifier
                 .align(Alignment.TopStart)
-                .offset(x = 45.dp, y = 125.dp)
+                .offset(x = 45.dp, y = 145.dp)
                 .graphicsLayer {
                     scaleX = motivationScale
                     scaleY = motivationScale
                 }
-                .clickable {
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = ripple(
+                        bounded = true,
+                        radius = 50.dp
+                    )
+                ) {
                     if (currentAppState != AppState.MOTIVATION) {
                         onAppStateChange(AppState.MOTIVATION)
                     }
                 }
-                .padding(8.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -367,7 +308,7 @@ fun CRTMonitor(
                 style = MaterialTheme.typography.bodyLarge.copy(
                     fontFamily = FontFamily.Default,
                     fontSize = 11.sp,
-                    fontWeight = if (currentAppState == AppState.MOTIVATION) FontWeight.Medium else FontWeight.Light,
+                    fontWeight = if (currentAppState == AppState.MOTIVATION) FontWeight.Medium else FontWeight.Normal,
                     color = tabTextColor.copy(alpha = motivationAlpha),
                     letterSpacing = 0.5.sp
                 )
@@ -378,17 +319,23 @@ fun CRTMonitor(
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .offset(x = 0.dp, y = 125.dp)
+                .offset(x = 0.dp, y = 145.dp)
                 .graphicsLayer {
                     scaleX = mindfulnessScale
                     scaleY = mindfulnessScale
                 }
-                .clickable {
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = ripple(
+                        bounded = true,
+                        radius = 50.dp
+                    )
+                ) {
                     if (currentAppState != AppState.MINDFULNESS) {
                         onAppStateChange(AppState.MINDFULNESS)
                     }
                 }
-                .padding(8.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -396,7 +343,7 @@ fun CRTMonitor(
                 style = MaterialTheme.typography.bodyLarge.copy(
                     fontFamily = FontFamily.Default,
                     fontSize = 11.sp,
-                    fontWeight = if (currentAppState == AppState.MINDFULNESS) FontWeight.Medium else FontWeight.Light,
+                    fontWeight = if (currentAppState == AppState.MINDFULNESS) FontWeight.Medium else FontWeight.Normal,
                     color = tabTextColor.copy(alpha = mindfulnessAlpha),
                     letterSpacing = 0.5.sp
                 )
@@ -407,17 +354,23 @@ fun CRTMonitor(
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .offset(x = (-45).dp, y = 125.dp)
+                .offset(x = (-45).dp, y = 145.dp)
                 .graphicsLayer {
                     scaleX = creativityScale
                     scaleY = creativityScale
                 }
-                .clickable {
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = ripple(
+                        bounded = true,
+                        radius = 50.dp
+                    )
+                ) {
                     if (currentAppState != AppState.CREATIVITY) {
                         onAppStateChange(AppState.CREATIVITY)
                     }
                 }
-                .padding(8.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -425,7 +378,7 @@ fun CRTMonitor(
                 style = MaterialTheme.typography.bodyLarge.copy(
                     fontFamily = FontFamily.Default,
                     fontSize = 11.sp,
-                    fontWeight = if (currentAppState == AppState.CREATIVITY) FontWeight.Medium else FontWeight.Light,
+                    fontWeight = if (currentAppState == AppState.CREATIVITY) FontWeight.Medium else FontWeight.Normal,
                     color = tabTextColor.copy(alpha = creativityAlpha),
                     letterSpacing = 0.5.sp
                 )
