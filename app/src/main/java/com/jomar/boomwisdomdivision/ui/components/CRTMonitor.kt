@@ -138,7 +138,7 @@ fun CRTMonitor(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 274.dp, start = 63.dp, end = 53.dp), // Same position for all states
+                .padding(top = 294.dp, start = 63.dp, end = 53.dp), // Moved down 20dp (274 + 20 = 294)
             contentAlignment = Alignment.TopCenter
         ) {
             // White canvas overlay COMPLETELY filling CRT screen from background image
@@ -228,7 +228,7 @@ fun CRTMonitor(
         
         // Author attribution positioned like in design (bottom right of moved CRT screen)
         // Adjust position based on screen height for different app states
-        val authorTopPadding = if (currentAppState == AppState.CREATIVITY) 449.dp else 509.dp // 60dp higher total for much shorter Creativity screen
+        val authorTopPadding = if (currentAppState == AppState.CREATIVITY) 469.dp else 529.dp // Moved down 20dp (449+20=469, 509+20=529)
         
         Box(
             modifier = Modifier
