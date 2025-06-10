@@ -11,10 +11,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.animation.AnimatedContent
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -47,7 +45,7 @@ fun BoomWisdomApp() {
     val quoteRepository = remember { QuoteRepositoryImpl.getInstance() }
     val preferencesManager = remember { PreferencesManager.getInstance(context) }
     var currentQuote by remember { mutableStateOf<Quote?>(null) }
-    var currentAppState by remember { mutableStateOf(preferencesManager.getAppState()) }
+    var currentAppState by remember { mutableStateOf(AppState.MOTIVATION) }
     val scope = rememberCoroutineScope()
     
     // Observe favorites from preferences
@@ -58,8 +56,12 @@ fun BoomWisdomApp() {
     val error by quoteRepository.error.collectAsStateWithLifecycle()
     val cachedQuotes by quoteRepository.cachedQuotes.collectAsStateWithLifecycle()
     
-    // Load initial quote
+    // Load initial quote and app state
     LaunchedEffect(Unit) {
+        // Initialize app state to MOTIVATION (ensure it's always the default)
+        currentAppState = AppState.MOTIVATION
+        preferencesManager.setAppState(AppState.MOTIVATION)
+        
         // Check if we have a last viewed quote
         val lastViewed = preferencesManager.getLastViewedQuote()
         currentQuote = lastViewed ?: quoteRepository.getRandomQuote()
@@ -89,86 +91,53 @@ fun BoomWisdomApp() {
         ) {
             composable("main") {
                 currentQuote?.let { quote ->
-                    // Add a glow state for quote transitions
-                    var isTransitioning by remember { mutableStateOf(false) }
-                    
-                    // Trigger glow animation on quote change
-                    LaunchedEffect(quote) {
-                        isTransitioning = true
-                        delay(1500) // Total animation time
-                        isTransitioning = false
-                    }
-                    
-                    // Full-screen CRT Monitor with backdrop
-                    AnimatedContent(
-                        targetState = quote,
-                        transitionSpec = {
-                            // Custom transition: glow -> fade out -> fade in -> unglow
-                            val fadeOutDuration = 500
-                            val fadeInDuration = 500
-                            val glowDuration = 250
-                            
-                            fadeIn(
-                                animationSpec = tween(
-                                    durationMillis = fadeInDuration,
-                                    delayMillis = fadeOutDuration + glowDuration
-                                )
-                            ) togetherWith fadeOut(
-                                animationSpec = tween(
-                                    durationMillis = fadeOutDuration,
-                                    delayMillis = glowDuration
-                                )
-                            )
+                    // Fixed CRT Monitor - only the quote content will animate
+                    CRTMonitor(
+                        quote = quote,
+                        currentAppState = currentAppState,
+                        isFavorite = favoriteIds.contains(quote.id),
+                        isTransitioning = false, // No longer needed
+                        onFavoriteClick = {
+                            preferencesManager.toggleFavorite(quote.id)
                         },
-                        label = "quote_transition"
-                    ) { animatedQuote ->
-                        CRTMonitor(
-                            quote = animatedQuote,
-                            currentAppState = currentAppState,
-                            isFavorite = favoriteIds.contains(animatedQuote.id),
-                            isTransitioning = isTransitioning,
-                            onFavoriteClick = {
-                                preferencesManager.toggleFavorite(animatedQuote.id)
-                            },
-                            onAppStateChange = { newState ->
-                                // Tab behavior: only change if different from current state
-                                if (currentAppState != newState) {
-                                    currentAppState = newState
-                                    preferencesManager.setAppState(newState)
-                                    
-                                    // Fetch new quote when switching tabs
-                                    scope.launch {
-                                        println("Tab switched to: ${newState.displayName}")
-                                        // TODO: Implement category-specific filtering based on app state
-                                        currentQuote = quoteRepository.getRandomQuote()
-                                    }
-                                }
-                            },
-                            onNextQuote = {
+                        onAppStateChange = { newState ->
+                            // Tab behavior: only change if different from current state
+                            if (currentAppState != newState) {
+                                currentAppState = newState
+                                preferencesManager.setAppState(newState)
+                                
+                                // Fetch new quote when switching tabs
                                 scope.launch {
-                                    println("User requested next quote") // Debug
+                                    println("Tab switched to: ${newState.displayName}")
+                                    // TODO: Implement category-specific filtering based on app state
                                     currentQuote = quoteRepository.getRandomQuote()
-                                }
-                            },
-                            onPreviousQuote = {
-                                scope.launch {
-                                    println("User requested previous quote") // Debug  
-                                    currentQuote = quoteRepository.getRandomQuote()
-                                }
-                            },
-                            onViewFavorites = {
-                                navController.navigate("favorites")
-                            },
-                            isLoading = isLoading,
-                            error = error,
-                            onRetry = {
-                                scope.launch {
-                                    quoteRepository.clearError()
-                                    quoteRepository.refreshQuotes()
                                 }
                             }
-                        )
-                    }
+                        },
+                        onNextQuote = {
+                            scope.launch {
+                                println("User requested next quote") // Debug
+                                currentQuote = quoteRepository.getRandomQuote()
+                            }
+                        },
+                        onPreviousQuote = {
+                            scope.launch {
+                                println("User requested previous quote") // Debug  
+                                currentQuote = quoteRepository.getRandomQuote()
+                            }
+                        },
+                        onViewFavorites = {
+                            navController.navigate("favorites")
+                        },
+                        isLoading = isLoading,
+                        error = error,
+                        onRetry = {
+                            scope.launch {
+                                quoteRepository.clearError()
+                                quoteRepository.refreshQuotes()
+                            }
+                        }
+                    )
                 }
             }
             
