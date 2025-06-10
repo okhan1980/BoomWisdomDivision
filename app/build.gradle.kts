@@ -78,6 +78,9 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     
+    // Fonts
+    implementation(libs.google.fonts)
+    
     // Networking for Phase 3
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
