@@ -78,12 +78,10 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     
-    // Networking - Temporarily disabled
-    // implementation(libs.retrofit)
-    // implementation(libs.retrofit.moshi)
-    // implementation(libs.moshi)
-    // implementation(libs.okhttp.logging)
-    // ksp(libs.moshi.codegen)  // Temporarily disabled
+    // Networking for Phase 3
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
+    implementation(libs.moshi)
     
     // Dependency Injection - Temporarily disabled
     // implementation(libs.hilt.android)
@@ -98,6 +96,9 @@ dependencies {
     // Architecture Components
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.lifecycle.runtime.compose)
+    
+    // Navigation
+    implementation(libs.navigation.compose)
     
     // Coroutines
     implementation(libs.coroutines.android)

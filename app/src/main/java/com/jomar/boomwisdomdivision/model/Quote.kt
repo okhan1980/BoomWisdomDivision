@@ -6,7 +6,7 @@ package com.jomar.boomwisdomdivision.model
 data class Quote(
     val text: String,
     val author: String,
-    val id: Int = text.hashCode()
+    val id: String = text.hashCode().toString()
 )
 
 /**

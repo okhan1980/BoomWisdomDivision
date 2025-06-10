@@ -40,10 +40,29 @@ BoomWisdomDivision is an Android app that presents motivational quotes through a
 - **Build System**: Gradle with Kotlin DSL and Version Catalog
 - **Min SDK**: 26 (Android 8.0) - For broader device support
 - **Target SDK**: 35 (Android 15)
-- **Architecture**: Simple MVVM pattern (no complex DI)
-- **Networking**: Basic OkHttp + Moshi (no Retrofit initially)
-- **Local Storage**: SharedPreferences for favorites
+- **Architecture**: Simple MVVM pattern (no Hilt/Dagger DI)
+- **Networking**: Basic OkHttp + Moshi (no Retrofit)
+- **Local Storage**: SharedPreferences (no Room database)
 - **Quote API**: Quotable API (free, no auth required)
+- **Dependencies**: Added gradually per phase to avoid complexity
+
+### Simplified Architecture Principles
+1. **No Hilt/Dagger**: Use simple singletons and manual DI
+2. **No Room Database**: SharedPreferences for simple storage
+3. **No Complex Networking**: Basic OkHttp calls
+4. **Simple MVVM**: ViewModels + Composables, minimal abstraction
+5. **Working first, perfect later**: Get functionality running quickly
+
+### Dependencies Added by Phase
+```kotlin
+// Phase 2: Just Compose basics (already have)
+// Phase 3: Add networking
+implementation("com.squareup.okhttp3:okhttp:4.12.0")
+implementation("com.squareup.moshi:moshi-kotlin:1.15.1")
+
+// Phase 4: Add if needed for preferences
+implementation("androidx.datastore:datastore-preferences:1.0.0")
+```
 
 ### Key Implementation Requirements
 
@@ -53,13 +72,14 @@ BoomWisdomDivision is an Android app that presents motivational quotes through a
    - Golden glow effects on the monitor base
 
 2. **API Integration (Phase 3)**
-   - Start with hardcoded quotes, then add Quotable API
+   - Start with hardcoded quotes in Phase 2, then add Quotable API
    - Simple HTTP calls with basic error handling
-   - Offline fallback using cached quotes
+   - Memory caching for offline fallback (no database)
 
 3. **Local Storage (Phase 4)**
    - SharedPreferences for favorites and settings
    - Store: favorite quotes, last viewed quote, user preferences
+   - Simple key-value storage approach
 
 4. **UI Components Needed**
    - Custom CRT monitor composable with perspective tilt
@@ -85,12 +105,12 @@ BoomWisdomDivision is an Android app that presents motivational quotes through a
 
 ## Development Workflow
 
-### Phase-Based Development
-The project follows a phased approach with PR reviews after each phase:
-1. **Phase 1**: Foundation & Core Architecture
-2. **Phase 2**: UI Implementation - Main Screen
-3. **Phase 3**: Core Functionality & Animations
-4. **Phase 4**: Favorites Screen & Polish
+### Phase-Based Development (Simplified)
+The project follows a simplified phased approach with PR reviews after each phase:
+1. **Phase 1**: Foundation & Core Architecture ✅ Complete
+2. **Phase 2**: Core UI & CRT Display (hardcoded quotes, CRT interface)
+3. **Phase 3**: Quote Management & API (Quotable API integration)
+4. **Phase 4**: Persistence & Polish (favorites, SharedPreferences)
 5. **Phase 5**: Testing & Release Prep
 
 ### Progress Tracking
@@ -114,19 +134,18 @@ The project follows a phased approach with PR reviews after each phase:
 - No authentication required
 - Response includes: content, author, length, tags
 
-**Caching Strategy**:
-- Pre-fetch 10-20 quotes in background
-- Store in Room database with timestamp
-- Serve from cache for instant response
-- Refresh cache when below 5 quotes
-- Implement exponential backoff for failures
+**Caching Strategy (Simplified)**:
+- Cache 10-20 quotes in memory for offline use
+- Simple refresh mechanism when cache is low
+- Basic error handling and retry logic
+- No database - memory-only caching initially
 
-### Testing Requirements
-- Unit tests for ViewModels and Repositories
+### Testing Requirements (Phase 5)
+- Unit tests for core quote logic
 - UI tests for critical user flows
-- Animation performance testing
+- Manual testing on multiple devices
+- Basic performance testing
 - Network error scenario testing
-- Database migration testing
 
 ### Performance Targets
 - App launch: < 2 seconds
@@ -138,32 +157,33 @@ The project follows a phased approach with PR reviews after each phase:
 ## Critical Project Rules
 
 **IMPORTANT**: Before any development, review:
-1. `PROJECT_INTEGRITY_RULES.md` - Comprehensive rules for maintaining code quality
+1. `SIMPLIFIED_DEVELOPMENT_PLAN.md` - Current simplified development approach
 2. `CURRENT_PHASE_PLAN.md` - Specific implementation details for the active phase
-3. `DEVELOPMENT_PLAN.md` - Overall project phases and timeline
-4. `PHASE_ROTATION_PROTOCOL.md` - Process for transitioning between phases
+3. `PHASE_ROTATION_PROTOCOL.md` - Process for transitioning between phases
+4. `PROJECT_INTEGRITY_RULES.md` - Code quality guidelines
 
 ### Pre-Development Checklist
 - [ ] Verify Android Studio has SDK 35 installed
 - [ ] Confirm JDK 17 is being used (REQUIRED - AGP 8.10.1 needs Java 17)
-- [ ] Review package structure requirements
-- [ ] Understand layer dependencies (data → domain ← presentation)
-- [ ] Check that minSdk will be changed to 26 in Phase 1
+- [ ] Review current phase plan in `CURRENT_PHASE_PLAN.md`
+- [ ] Understand simplified architecture (no complex DI, simple MVVM)
+- [ ] Check that minSdk is 26 for broader device support
 
 ### Quality Gates
 Each phase must pass these checks:
-1. Run `./check-quality.sh` (create this script in Phase 1)
+1. Run `./check-quality.sh` script
 2. Detekt analysis shows 0 issues
-3. Unit test coverage meets phase requirements
-4. No memory leaks detected
-5. Runs on both API 26 and API 35 devices
+3. App builds and runs successfully
+4. Manual testing on target devices
+5. Core functionality works as expected
 
 ### Common Pitfalls to Avoid
-1. Don't use SDK 34 features without proper API level checks
+1. Don't over-engineer - keep architecture simple
 2. Don't add dependencies without version catalog entries
-3. Don't skip writing tests for repositories and use cases
+3. Don't skip basic testing for core functionality
 4. Don't commit code with TODO comments
-5. Don't create circular dependencies between layers
+5. Don't add complex patterns when simple ones work
+6. Don't use advanced SDK features without API level checks
 
 ## Phase Management
 
