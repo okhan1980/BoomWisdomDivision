@@ -1,7 +1,6 @@
 package com.jomar.boomwisdomdivision.data.repository
 
-import com.jomar.boomwisdomdivision.data.api.QuotableApi
-import com.jomar.boomwisdomdivision.data.model.QuoteResponse
+import com.jomar.boomwisdomdivision.data.api.ClaudeApi
 import com.jomar.boomwisdomdivision.model.Quote
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -11,15 +10,19 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 /**
  * Simple quote repository implementation without DI framework
- * Manages quote caching and API calls for Phase 3
+ * Manages quote generation using Claude API and caching
  */
 class QuoteRepositoryImpl {
     
-    private val quotableApi = QuotableApi()
+    private val claudeApi = ClaudeApi.getInstance()
     private val cacheMutex = Mutex()
+    
+    // Current selected category
+    private var currentCategory = "motivation"
     
     // In-memory cache for quotes
     private val _cachedQuotes = MutableStateFlow<List<Quote>>(emptyList())
@@ -61,25 +64,25 @@ class QuoteRepositoryImpl {
     }
     
     /**
-     * Get a random quote - prioritizes fresh API quotes with Quotable.io's generous rate limits
+     * Get a generated quote from Claude API based on selected category
      */
-    suspend fun getRandomQuote(): Quote {
+    suspend fun getRandomQuote(category: String = currentCategory): Quote {
         println("=== QuoteRepositoryImpl.getRandomQuote() called ===")
         println("📊 Displayed quotes so far: ${displayedQuoteIds.size}")
         
-        // Try API first since Quotable.io has generous rate limits (180/minute)
+        // Update current category
+        currentCategory = category
+        
+        // Try Claude API first
         try {
-            val result = quotableApi.getRandomQuote()
+            val apiQuote = claudeApi.generateQuote(category)
             
-            if (result.isSuccess) {
-                val apiQuote = result.getOrNull()?.toQuote()
-                if (apiQuote != null) {
-                    // Check if we've already displayed this specific quote
-                    if (!displayedQuoteIds.contains(apiQuote.id.toInt())) {
-                        println("✅ API Success! Got NEW quote: \"${apiQuote.text.take(50)}...\" - ${apiQuote.author}")
-                        
-                        // Mark as displayed
-                        displayedQuoteIds.add(apiQuote.id.toInt())
+            if (apiQuote != null) {
+                    // Claude generates unique quotes, so no need to check for duplicates
+                    println("✅ Claude API Success! Generated quote: \"${apiQuote.text}\" - ${apiQuote.author}")
+                    
+                    // Track for consistency (though not needed for uniqueness)
+                    displayedQuoteIds.add(apiQuote.id.hashCode())
                         
                         // Add to cache for offline use
                         cacheMutex.withLock {
@@ -93,13 +96,8 @@ class QuoteRepositoryImpl {
                         }
                         
                         return apiQuote
-                    } else {
-                        println("⚠️ Quote already displayed (ID: ${apiQuote.id}), trying cache...")
-                    }
-                }
             } else {
-                val error = result.exceptionOrNull()?.message ?: ""
-                println("❌ API call failed: $error")
+                println("❌ Claude API returned null")
             }
         } catch (e: Exception) {
             println("❌ Exception in API call: ${e.message}")
@@ -149,39 +147,43 @@ class QuoteRepositoryImpl {
     }
     
     /**
-     * Refresh quote cache from API - uses Quotable.io's generous rate limits
+     * Refresh quote cache from Claude API - generates multiple quotes
      */
     suspend fun refreshQuotes() {
         _isLoading.value = true
         _error.value = null
         
         try {
-            println("Starting quote refresh...") // Debug logging
-            // Fetch more quotes since Quotable.io has generous rate limits (180/minute)
-            val result = quotableApi.getMultipleRandomQuotes(25) // Much larger batch
-            if (result.isSuccess) {
-                val quotes = result.getOrNull()?.map { it.toQuote() } ?: emptyList()
-                println("✅ Successfully fetched ${quotes.size} quotes from API")
-                cacheMutex.withLock {
-                    // Merge new quotes with existing cache, maintaining uniqueness
-                    val currentQuotes = _cachedQuotes.value.toMutableList()
-                    quotes.forEach { newQuote ->
-                        if (currentQuotes.none { it.id == newQuote.id }) {
-                            currentQuotes.add(newQuote)
-                        }
+            println("Starting quote generation...") // Debug logging
+            // Generate quotes for each category to build diverse cache
+            val categories = listOf("motivation", "mindfulness", "creativity")
+            val quotes = mutableListOf<Quote>()
+            
+            // Generate 3 quotes per category (9 total)
+            for (category in categories) {
+                for (i in 1..3) {
+                    val quote = claudeApi.generateQuote(category)
+                    if (quote != null) {
+                        quotes.add(quote)
+                        delay(500) // Small delay to avoid rate limits
                     }
-                    _cachedQuotes.value = currentQuotes
-                    println("📦 Cache updated with ${_cachedQuotes.value.size} total quotes")
-                    println("📊 ${displayedQuoteIds.size} quotes have been displayed")
                 }
-                _error.value = null // Clear any previous errors
-            } else {
-                val exception = result.exceptionOrNull()
-                val errorMsg = exception?.message ?: "Unable to fetch quotes"
-                println("Quote refresh failed: $errorMsg") // Debug logging
-                _error.value = "Network error: $errorMsg"
-                // Keep existing cache on failure
             }
+            
+            println("✅ Successfully generated ${quotes.size} quotes from Claude")
+            cacheMutex.withLock {
+                // Merge new quotes with existing cache, maintaining uniqueness
+                val currentQuotes = _cachedQuotes.value.toMutableList()
+                quotes.forEach { newQuote ->
+                    if (currentQuotes.none { it.id == newQuote.id }) {
+                        currentQuotes.add(newQuote)
+                    }
+                }
+                _cachedQuotes.value = currentQuotes
+                println("📦 Cache updated with ${_cachedQuotes.value.size} total quotes")
+                println("📊 ${displayedQuoteIds.size} quotes have been displayed")
+            }
+            _error.value = null // Clear any previous errors
         } catch (e: Exception) {
             val errorMsg = "Unexpected error: ${e.message ?: "Unknown error occurred"}"
             println("Quote refresh exception: $errorMsg") // Debug logging
@@ -192,7 +194,7 @@ class QuoteRepositoryImpl {
     }
     
     /**
-     * Refill cache when running low - uses Quotable.io's generous rate limits
+     * Refill cache when running low - generates quotes from Claude
      */
     private suspend fun refillCache() {
         if (_isLoading.value) return // Already loading
@@ -200,27 +202,31 @@ class QuoteRepositoryImpl {
         _isLoading.value = true
         
         try {
-            // Fetch more quotes since Quotable.io has generous rate limits
-            val quotesToFetch = 15 // Reasonable batch size for background refill
-            println("Background cache refill: attempting to fetch $quotesToFetch quotes...")
+            val categories = listOf("motivation", "mindfulness", "creativity")
+            val newQuotes = mutableListOf<Quote>()
+            println("Background cache refill: generating new quotes...")
             
-            val result = quotableApi.getMultipleRandomQuotes(quotesToFetch)
-            if (result.isSuccess) {
-                val newQuotes = result.getOrNull()?.map { it.toQuote() } ?: emptyList()
-                println("✅ Background refill: fetched ${newQuotes.size} new quotes") // Debug logging
-                cacheMutex.withLock {
-                    val currentQuotes = _cachedQuotes.value.toMutableList()
-                    newQuotes.forEach { newQuote ->
-                        if (currentQuotes.none { it.id == newQuote.id }) {
-                            currentQuotes.add(newQuote)
-                        }
+            // Generate 2 quotes per category (6 total) for background refill
+            for (category in categories) {
+                for (i in 1..2) {
+                    val quote = claudeApi.generateQuote(category)
+                    if (quote != null) {
+                        newQuotes.add(quote)
+                        delay(500) // Small delay
                     }
-                    _cachedQuotes.value = currentQuotes
-                    println("📦 Background refill complete. Cache size: ${_cachedQuotes.value.size}")
                 }
-            } else {
-                val error = result.exceptionOrNull()?.message ?: "Unknown error"
-                println("⚠️ Background refill failed: $error")
+            }
+            
+            println("✅ Background refill: generated ${newQuotes.size} new quotes") // Debug logging
+            cacheMutex.withLock {
+                val currentQuotes = _cachedQuotes.value.toMutableList()
+                newQuotes.forEach { newQuote ->
+                    if (currentQuotes.none { it.id == newQuote.id }) {
+                        currentQuotes.add(newQuote)
+                    }
+                }
+                _cachedQuotes.value = currentQuotes
+                println("📦 Background refill complete. Cache size: ${_cachedQuotes.value.size}")
             }
         } catch (e: Exception) {
             println("❌ Background refill exception: ${e.message}") // Debug logging
@@ -235,15 +241,16 @@ class QuoteRepositoryImpl {
     fun clearError() {
         _error.value = null
     }
-}
-
-/**
- * Extension function to convert QuoteResponse to Quote
- */
-private fun QuoteResponse.toQuote(): Quote {
-    return Quote(
-        text = this.content,
-        author = this.author,
-        id = this.id.toString()
-    )
+    
+    /**
+     * Set the current category for quote generation
+     */
+    fun setCategory(category: String) {
+        currentCategory = category
+    }
+    
+    /**
+     * Get the current selected category
+     */
+    fun getCurrentCategory(): String = currentCategory
 }

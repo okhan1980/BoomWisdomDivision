@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -21,11 +23,22 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Load API key from local.properties
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.inputStream().use { 
+                localProperties.load(it)
+            }
+        }
+        buildConfigField("String", "ANTHROPIC_API_KEY", "\"${localProperties.getProperty("ANTHROPIC_API_KEY", "")}\"")
     }
 
     buildTypes {
         debug {
-            isTestCoverageEnabled = true
+            enableUnitTestCoverage = true
+            enableAndroidTestCoverage = true
         }
         release {
             isMinifyEnabled = false
@@ -55,7 +68,7 @@ android {
         animationsDisabled = true
     }
     
-    packagingOptions {
+    packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
@@ -146,7 +159,7 @@ tasks.register<JacocoReport>("jacocoTestReport") {
         csv.required.set(false)
     }
     
-    val debugTree = fileTree("${buildDir}/tmp/kotlin-classes/debug") {
+    val debugTree = fileTree("${layout.buildDirectory.get()}/tmp/kotlin-classes/debug") {
         exclude(
             "**/R.class",
             "**/R$*.class",
@@ -168,7 +181,7 @@ tasks.register<JacocoReport>("jacocoTestReport") {
     
     classDirectories.setFrom(debugTree)
     sourceDirectories.setFrom("${projectDir}/src/main/java")
-    executionData.setFrom("${buildDir}/jacoco/testDebugUnitTest.exec")
+    executionData.setFrom("${layout.buildDirectory.get()}/jacoco/testDebugUnitTest.exec")
 }
 
 // Task to run tests with coverage

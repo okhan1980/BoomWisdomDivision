@@ -64,7 +64,7 @@ fun BoomWisdomApp() {
         
         // Check if we have a last viewed quote
         val lastViewed = preferencesManager.getLastViewedQuote()
-        currentQuote = lastViewed ?: quoteRepository.getRandomQuote()
+        currentQuote = lastViewed ?: quoteRepository.getRandomQuote(currentAppState.displayName.lowercase())
         
         // Trigger initial cache refresh in background
         try {
@@ -109,21 +109,21 @@ fun BoomWisdomApp() {
                                 // Fetch new quote when switching tabs
                                 scope.launch {
                                     println("Tab switched to: ${newState.displayName}")
-                                    // TODO: Implement category-specific filtering based on app state
-                                    currentQuote = quoteRepository.getRandomQuote()
+                                    // Get quote for the selected category
+                                    currentQuote = quoteRepository.getRandomQuote(newState.displayName.lowercase())
                                 }
                             }
                         },
                         onNextQuote = {
                             scope.launch {
                                 println("User requested next quote") // Debug
-                                currentQuote = quoteRepository.getRandomQuote()
+                                currentQuote = quoteRepository.getRandomQuote(currentAppState.displayName.lowercase())
                             }
                         },
                         onPreviousQuote = {
                             scope.launch {
                                 println("User requested previous quote") // Debug  
-                                currentQuote = quoteRepository.getRandomQuote()
+                                currentQuote = quoteRepository.getRandomQuote(currentAppState.displayName.lowercase())
                             }
                         },
                         onViewFavorites = {
