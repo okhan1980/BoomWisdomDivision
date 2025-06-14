@@ -100,8 +100,8 @@ fun CRTMonitor(
         label = "creativity_scale"
     )
     
-    // Dynamic text color based on background - black for Creativity (light bg), white for others (dark bg)
-    val tabTextColor = if (currentAppState == AppState.CREATIVITY) Color.Black else Color.White
+    // Dynamic text color based on background - black for Creativity and Mindfulness (light bg), white for others (dark bg)
+    val tabTextColor = if (currentAppState == AppState.CREATIVITY || currentAppState == AppState.MINDFULNESS) Color.Black else Color.White
     
     // Debug: Print current app state
     LaunchedEffect(currentAppState) {
@@ -114,7 +114,7 @@ fun CRTMonitor(
         val backgroundResource = when (currentAppState) {
             AppState.MOTIVATION -> R.drawable.wisdom_inspiration_bg
             AppState.CREATIVITY -> R.drawable.wisdom_creativity_bg
-            AppState.MINDFULNESS -> R.drawable.boom_wisdom_backdrop // Keep original for mindfulness
+            AppState.MINDFULNESS -> R.drawable.wisdom_mindfulness_bg
         }
         
         AnimatedContent(
@@ -135,13 +135,13 @@ fun CRTMonitor(
         
         // Quote text overlay positioned to completely fill CRT screen area
         // Use same dimensions for all states to maintain consistent positioning
-        val screenHeight = if (currentAppState == AppState.CREATIVITY || currentAppState == AppState.MOTIVATION) 215.dp else 275.dp
-        val screenWidth = 282.dp
+        val screenHeight = 310.dp // Square dimensions matching width
+        val screenWidth = 310.dp // 10% bigger (282 * 1.1 = 310)
         
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 314.dp, start = 63.dp, end = 53.dp), // Moved down 40dp total (274 + 40 = 314)
+                .padding(top = 273.dp, start = 63.dp, end = 53.dp), // Moved up 41dp total (314 - 41 = 273)
             contentAlignment = Alignment.TopCenter
         ) {
             // Removed white background overlay - keeping only text
@@ -180,9 +180,19 @@ fun CRTMonitor(
                         }
                         else -> {
                             // Use fixed font size as requested
-                            val baseText = animatedQuote.text.uppercase()
+                            val baseTextWithoutPeriod = animatedQuote.text.uppercase().replace(".", "")
                             val fontSize = 26.sp
                             val lineHeight = 31.sp
+                            
+                            // Flashing cursor animation
+                            var cursorVisible by remember { mutableStateOf(true) }
+                            
+                            LaunchedEffect(Unit) {
+                                while (true) {
+                                    delay(530)
+                                    cursorVisible = !cursorVisible
+                                }
+                            }
                             
                             // Dynamic text color based on app state
                             val textColor = if (currentAppState == AppState.CREATIVITY) {
@@ -191,9 +201,9 @@ fun CRTMonitor(
                                 Color(0xFF2A2A2A) // Dark gray for motivation/mindfulness
                             }
                             
-                            // Quote text with perspective transformation to simulate angled CRT screen
+                            // Quote text with flashing cursor
                             Text(
-                                text = baseText,
+                                text = baseTextWithoutPeriod + if (cursorVisible) "_" else " ",
                                 style = MaterialTheme.typography.bodyLarge.copy(
                                     fontFamily = InterFontFamily, // Inter font from Google Fonts
                                     fontSize = fontSize,
